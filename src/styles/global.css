@@ -1,0 +1,261 @@
+/* ============================================================
+   GLOBALS.CSS — Design System Tokens + Base Styles
+   AI Secretary Assistant
+   ============================================================ */
+
+/* ── Google Fonts fallback (if not loaded via <head>) ──────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── CSS Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Design Tokens — Light Mode ────────────────────────────── */
+:root {
+  /* Surfaces */
+  --surface-primary:    #ffffff;
+  --surface-secondary:  #f8f9fa;
+  --surface-tertiary:   #f0fdf4;
+  --surface-overlay:    rgba(0, 0, 0, 0.04);
+
+  /* Chat bubbles */
+  --bubble-user:        linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+  --bubble-user-text:   #ffffff;
+  --bubble-ai:          #f3f4f6;
+  --bubble-ai-text:     #111827;
+
+  /* Input */
+  --input-bg:           #f3f4f6;
+  --input-border:       #e5e7eb;
+  --input-border-focus: #0f766e;
+  --input-placeholder:  #9ca3af;
+
+  /* Chips / tags */
+  --chip-bg:            #f1f5f9;
+  --chip-border:        #e2e8f0;
+
+  /* Borders */
+  --border:             #e5e7eb;
+  --border-strong:      #d1d5db;
+
+  /* Text */
+  --text-primary:       #111827;
+  --text-secondary:     #374151;
+  --text-tertiary:      #6b7280;
+  --text-muted:         #9ca3af;
+
+  /* Brand / Accent */
+  --accent:             #0f766e;
+  --accent-hover:       #0d6460;
+  --accent-light:       #ccfbf1;
+  --accent-alpha:       rgba(15, 118, 110, 0.08);
+  --accent-alpha-strong: rgba(15, 118, 110, 0.18);
+
+  /* Semantic */
+  --success:            #10b981;
+  --success-bg:         #f0fdf4;
+  --warning:            #f59e0b;
+  --warning-bg:         #fffbeb;
+  --error:              #ef4444;
+  --error-bg:           #fef2f2;
+  --error-border:       #fecaca;
+  --error-text:         #b91c1c;
+  --info:               #3b82f6;
+  --info-bg:            #eff6ff;
+
+  /* Typography */
+  --font-base:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+  /* Spacing scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* Radii */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,0.12);
+  --shadow-accent: 0 4px 14px rgba(15,118,110,0.35);
+
+  /* Transitions */
+  --transition-fast:   0.12s ease;
+  --transition-base:   0.18s ease;
+  --transition-slow:   0.28s ease;
+
+  /* Topbar */
+  --topbar-bg:  #f0fdf4;
+  --topbar-h:   48px;
+  --header-h:   58px;
+}
+
+/* ── Design Tokens — Dark Mode ─────────────────────────────── */
+[data-theme="dark"] {
+  --surface-primary:    #111827;
+  --surface-secondary:  #1f2937;
+  --surface-tertiary:   #0f172a;
+  --surface-overlay:    rgba(255, 255, 255, 0.04);
+
+  --bubble-user:        linear-gradient(135deg, #0f766e 0%, #064e3b 100%);
+  --bubble-user-text:   #ffffff;
+  --bubble-ai:          #1f2937;
+  --bubble-ai-text:     #f9fafb;
+
+  --input-bg:           #1f2937;
+  --input-border:       #374151;
+  --input-border-focus: #34d399;
+  --input-placeholder:  #6b7280;
+
+  --chip-bg:            #374151;
+  --chip-border:        #4b5563;
+
+  --border:             #374151;
+  --border-strong:      #4b5563;
+
+  --text-primary:       #f9fafb;
+  --text-secondary:     #e5e7eb;
+  --text-tertiary:      #9ca3af;
+  --text-muted:         #6b7280;
+
+  --accent:             #34d399;
+  --accent-hover:       #6ee7b7;
+  --accent-light:       #064e3b;
+  --accent-alpha:       rgba(52, 211, 153, 0.10);
+  --accent-alpha-strong: rgba(52, 211, 153, 0.20);
+
+  --success:            #34d399;
+  --success-bg:         #064e3b;
+  --error-bg:           #450a0a;
+  --error-border:       #7f1d1d;
+  --error-text:         #fca5a5;
+  --info-bg:            #1e3a5f;
+
+  --topbar-bg:          #0f172a;
+
+  --shadow-accent: 0 4px 14px rgba(52,211,153,0.25);
+}
+
+/* ── Base Styles ────────────────────────────────────────────── */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-base);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Scrollbar Styles ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+
+/* ── Keyframe Animations ────────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-7px); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Utility Classes ────────────────────────────────────────── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Focus Styles (accessibility) ───────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Selection ──────────────────────────────────────────────── */
+::selection {
+  background: var(--accent-alpha-strong);
+  color: var(--text-primary);
+}
+
+/* ── Responsive Breakpoints ─────────────────────────────────── */
+@media (max-width: 640px) {
+  :root {
+    --space-4: 12px;
+    --space-5: 16px;
+    --space-6: 20px;
+  }
+}
