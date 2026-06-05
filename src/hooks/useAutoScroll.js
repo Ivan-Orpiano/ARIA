@@ -25,11 +25,12 @@ export function useAutoScroll(dependency, always = false) {
 
     useEffect (() => {
         if (always || isNearBottom()){
-            const raf =
+            const raf =requestAnimationFrame(() => scrollToBottom(true));
+            return () => cancelAnimationFrame(raf);
         }
-    })
+    },[dependency, always, isNearBottom, scrollToBottom]);
 
-
+    return containerRef;
 
 
 
