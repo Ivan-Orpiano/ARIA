@@ -1,158 +1,75 @@
+export const ACCEPTED_TYPES = {
+  // Documents
+  'application/pdf':                                     { icon: '📄', label: 'PDF',  color: '#FF6B6B' },
+  'application/msword':                                  { icon: '📝', label: 'DOC',  color: '#4A90E2' },
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                                                         { icon: '📝', label: 'DOCX', color: '#4A90E2' },
+  'application/vnd.ms-excel':                            { icon: '📊', label: 'XLS',  color: '#27AE60' },
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                                                         { icon: '📊', label: 'XLSX', color: '#27AE60' },
+  'application/vnd.ms-powerpoint':                       { icon: '📋', label: 'PPT',  color: '#E67E22' },
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                                                         { icon: '📋', label: 'PPTX', color: '#E67E22' },
+  'text/plain':                                          { icon: '📃', label: 'TXT',  color: '#95A5A6' },
+  'text/csv':                                            { icon: '📊', label: 'CSV',  color: '#27AE60' },
+  // Images
+  'image/jpeg':  { icon: '🖼️', label: 'JPG',  color: '#3DFFC0' },
+  'image/png':   { icon: '🖼️', label: 'PNG',  color: '#3DFFC0' },
+  'image/gif':   { icon: '🖼️', label: 'GIF',  color: '#3DFFC0' },
+  'image/webp':  { icon: '🖼️', label: 'WEBP', color: '#3DFFC0' },
+  'image/svg+xml': { icon: '🖼️', label: 'SVG', color: '#3DFFC0' },
+  // Archives
+  'application/zip':             { icon: '📦', label: 'ZIP', color: '#9B59B6' },
+  'application/x-rar-compressed':{ icon: '📦', label: 'RAR', color: '#9B59B6' },
+  // Code
+  'application/json':     { icon: '⚙️', label: 'JSON', color: '#F39C12' },
+  'text/javascript':      { icon: '⚙️', label: 'JS',   color: '#F39C12' },
+  'text/html':            { icon: '⚙️', label: 'HTML', color: '#E74C3C' },
+  'text/css':             { icon: '⚙️', label: 'CSS',  color: '#3498DB' },
+};
 
-export const ALLOWED_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'text/plain',
-  'text/csv',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-];
+export const MAX_FILE_SIZE       = 20 * 1024 * 1024; // 20 MB
+export const MAX_FILES_PER_MSG   = 5;
 
-/** Maximum file size: 10 MB */
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+/* ── Get file meta ────────────────────────────────────────────────── */
+export const getFileMeta = (file) => {
+  return ACCEPTED_TYPES[file.type] ?? { icon: '📎', label: 'FILE', color: '#8A94AA' };
+};
 
-/** Maximum number of files per message */
-export const MAX_FILE_COUNT = 5;
+/* ── Format file size ────────────────────────────────────────────── */
+export const formatFileSize = (bytes) => {
+  if (bytes === 0)           return '0 B';
+  if (bytes < 1024)          return `${bytes} B`;
+  if (bytes < 1024 * 1024)   return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
-/**
- * Returns a human-readable file size string.
- * @param {number} bytes
- * @returns {string}
- */
-export function formatFileSize(bytes) {
-  if (bytes === 0) return '0 B';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
-
-/**
- * Returns an emoji icon for a given MIME type.
- * @param {string} mimeType
- * @returns {string}
- */
-export function getFileIcon(mimeType) {
-  if (!mimeType) return '📎';
-  if (mimeType.startsWith('image/'))       return '🖼️';
-  if (mimeType === 'application/pdf')      return '📄';
-  if (mimeType.includes('word'))           return '📝';
-  if (mimeType.includes('sheet') || mimeType.includes('excel') || mimeType === 'text/csv') return '📊';
-  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return '📑';
-  if (mimeType.startsWith('text/'))        return '📃';
-  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '🗜️';
-  return '📎';
-}
-
-/**
- * Returns a short, human-readable label for a MIME type.
- * @param {string} mimeType
- * @returns {string}
- */
-export function getFileTypeLabel(mimeType) {
-  if (!mimeType) return 'File';
-  if (mimeType === 'image/jpeg')          return 'JPEG';
-  if (mimeType === 'image/png')           return 'PNG';
-  if (mimeType === 'image/gif')           return 'GIF';
-  if (mimeType === 'image/webp')          return 'WebP';
-  if (mimeType === 'application/pdf')     return 'PDF';
-  if (mimeType === 'text/plain')          return 'TXT';
-  if (mimeType === 'text/csv')            return 'CSV';
-  if (mimeType.includes('word'))          return 'DOCX';
-  if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'XLSX';
-  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'PPTX';
-  return mimeType.split('/')[1]?.toUpperCase() || 'FILE';
-}
-
-/**
- * Returns true if the file is an image type.
- * @param {string} mimeType
- * @returns {boolean}
- */
-export function isImageFile(mimeType) {
-  return typeof mimeType === 'string' && mimeType.startsWith('image/');
-}
-
-/**
- * Validates a single File object.
- * Returns null if valid, or an error string if invalid.
- * @param {File} file
- * @returns {string|null}
- */
-export function validateFile(file) {
-  if (!file) return 'No file provided.';
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return `"${file.name}" has an unsupported type (${file.type || 'unknown'}).`;
-  }
+/* ── Validate a file ─────────────────────────────────────────────── */
+export const validateFile = (file) => {
   if (file.size > MAX_FILE_SIZE) {
-    return `"${file.name}" exceeds the 10 MB size limit (${formatFileSize(file.size)}).`;
+    return { valid: false, error: `File too large (max ${formatFileSize(MAX_FILE_SIZE)})` };
   }
-  if (file.size === 0) {
-    return `"${file.name}" is empty.`;
+  return { valid: true };
+};
+
+/* ── Create a preview object from a File ────────────────────────── */
+export const createFilePreview = (file) => ({
+  id:       `${file.name}-${file.size}-${Date.now()}`,
+  file,
+  name:     file.name,
+  size:     file.size,
+  type:     file.type,
+  meta:     getFileMeta(file),
+  preview:  file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+  sizeStr:  formatFileSize(file.size),
+});
+
+/* ── Revoke preview URLs to avoid memory leaks ───────────────────── */
+export const revokePreview = (filePreview) => {
+  if (filePreview.preview) {
+    URL.revokeObjectURL(filePreview.preview);
   }
-  return null;
-}
+};
 
-/**
- * Validates an array of new files against existing ones.
- * Returns { valid: File[], errors: string[] }.
- * @param {File[]} newFiles
- * @param {File[]} existingFiles
- * @returns {{ valid: File[], errors: string[] }}
- */
-export function validateFiles(newFiles, existingFiles = []) {
-  const errors = [];
-  const valid = [];
-  const remaining = MAX_FILE_COUNT - existingFiles.length;
-
-  if (remaining <= 0) {
-    return { valid: [], errors: [`Maximum of ${MAX_FILE_COUNT} files allowed.`] };
-  }
-
-  Array.from(newFiles).forEach((file, index) => {
-    if (index >= remaining) {
-      errors.push(`Only ${remaining} more file(s) can be added.`);
-      return;
-    }
-    const error = validateFile(file);
-    if (error) {
-      errors.push(error);
-    } else {
-      valid.push(file);
-    }
-  });
-
-  return { valid, errors };
-}
-
-/**
- * Converts a File to a base64-encoded data string (without prefix).
- * @param {File} file
- * @returns {Promise<string>}
- */
-export function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
- * Creates a temporary object URL for a file preview.
- * Remember to call URL.revokeObjectURL(url) when done.
- * @param {File} file
- * @returns {string|null}
- */
-export function createPreviewUrl(file) {
-  if (!isImageFile(file.type)) return null;
-  return URL.createObjectURL(file);
-}
+/* ── Accept string for <input accept="..."> ─────────────────────── */
+export const ACCEPT_STRING = Object.keys(ACCEPTED_TYPES).join(',');
