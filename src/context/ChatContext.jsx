@@ -1,237 +1,138 @@
-/**
- * ChatContext.jsx
- * ─────────────────────────────────────────────────────────────
- * Global state management for the AI Secretary Assistant.
- *
- * Uses React Context + useReducer (Redux-style) for predictable,
- * centralized state. Every state mutation is dispatched as an
- * explicit action — no prop-drilling needed anywhere in the tree.
- *
- * Shape of state:
- * {
- *   messages:  Message[]   — full conversation history
- *   files:     File[]      — currently staged attachments
- *   isTyping:  boolean     — true while waiting for AI reply
- *   error:     string|null — current error message to display
- *   sessionId: string      — unique ID for this conversation
- *   theme:     'light'|'dark'
- * }
- * ─────────────────────────────────────────────────────────────
- */
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useCallback,
+  useMemo,
+} from 'react';
+import { sendToWebhook }   from '../services/webhookService';
+import {
+  createUserMessage,
+  createAssistantMessage,
+  createErrorMessage,
+  genSessionId,
+} from '../utils/messageUtils';
 
-import { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
-import { nowISO } from '../utils/dateUtils';
-
-// ─────────────────────────────────────────────
-// Action Types (string constants prevent typos)
-// ─────────────────────────────────────────────
-export const Actions = {
-  ADD_MESSAGE:   'ADD_MESSAGE',
-  SET_FILES:     'SET_FILES',
-  ADD_FILES:     'ADD_FILES',
-  REMOVE_FILE:   'REMOVE_FILE',
-  CLEAR_FILES:   'CLEAR_FILES',
-  SET_TYPING:    'SET_TYPING',
-  SET_ERROR:     'SET_ERROR',
-  CLEAR_ERROR:   'CLEAR_ERROR',
-  SET_THEME:     'SET_THEME',
-  CLEAR_HISTORY: 'CLEAR_HISTORY',
-};
-
-// ─────────────────────────────────────────────
-// Initial State
-// ─────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────── */
+/*  State shape                                                         */
+/* ─────────────────────────────────────────────────────────────────── */
 const initialState = {
-  messages:  [],
-  files:     [],
-  isTyping:  false,
-  error:     null,
-  sessionId: `session_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-  theme:     window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+  messages:    [],   // { id, role, text, files, timestamp, status }
+  isLoading:   false,
+  error:       null,
+  sessionId:   genSessionId(),
 };
 
-// ─────────────────────────────────────────────
-// Pure Reducer
-// ─────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Reducer                                                             */
+/* ─────────────────────────────────────────────────────────────────── */
+const ADD_MSG      = 'ADD_MSG';
+const UPDATE_MSG   = 'UPDATE_MSG';
+const SET_LOADING  = 'SET_LOADING';
+const SET_ERROR    = 'SET_ERROR';
+const CLEAR_CHAT   = 'CLEAR_CHAT';
+
 function chatReducer(state, action) {
   switch (action.type) {
-    case Actions.ADD_MESSAGE:
+    case ADD_MSG:
+      return { ...state, messages: [...state.messages, action.payload] };
+
+    case UPDATE_MSG:
       return {
         ...state,
-        messages: [...state.messages, action.payload],
-        error: null,              // clear any lingering error on new message
+        messages: state.messages.map((m) =>
+          m.id === action.payload.id ? { ...m, ...action.payload } : m
+        ),
       };
 
-    case Actions.SET_FILES:
-      return { ...state, files: action.payload };
+    case SET_LOADING:
+      return { ...state, isLoading: action.payload };
 
-    case Actions.ADD_FILES:
-      return {
-        ...state,
-        files: [...state.files, ...action.payload].slice(0, 5),
-      };
+    case SET_ERROR:
+      return { ...state, error: action.payload };
 
-    case Actions.REMOVE_FILE:
-      return {
-        ...state,
-        files: state.files.filter((_, i) => i !== action.payload),
-      };
-
-    case Actions.CLEAR_FILES:
-      return { ...state, files: [] };
-
-    case Actions.SET_TYPING:
-      return { ...state, isTyping: action.payload };
-
-    case Actions.SET_ERROR:
-      return { ...state, error: action.payload, isTyping: false };
-
-    case Actions.CLEAR_ERROR:
-      return { ...state, error: null };
-
-    case Actions.SET_THEME:
-      return { ...state, theme: action.payload };
-
-    case Actions.CLEAR_HISTORY:
-      return {
-        ...state,
-        messages: [],
-        files: [],
-        error: null,
-        isTyping: false,
-        sessionId: `session_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      };
+    case CLEAR_CHAT:
+      return { ...initialState, sessionId: state.sessionId };
 
     default:
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`[ChatContext] Unknown action type: "${action.type}"`);
-      }
       return state;
   }
 }
 
-// ─────────────────────────────────────────────
-// Context
-// ─────────────────────────────────────────────
-export const ChatContext = createContext(null);
+/* ─────────────────────────────────────────────────────────────────── */
+/*  Context                                                             */
+/* ─────────────────────────────────────────────────────────────────── */
+const ChatContext = createContext(null);
 
-// ─────────────────────────────────────────────
-// Provider
-// ─────────────────────────────────────────────
-
-/**
- * Wraps the app tree and exposes chat state + action dispatchers.
- * Any component can call `useChatContext()` to consume this.
- */
 export function ChatProvider({ children }) {
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
-  // ── Action creators (memoized for stable references) ──────
+  /* ── sendMessage ─────────────────────────────────────────────── */
+  const sendMessage = useCallback(
+    async (text, files = []) => {
+      if (!text.trim() && files.length === 0) return;
 
-  const addMessage = useCallback((role, content, files = []) => {
-    dispatch({
-      type: Actions.ADD_MESSAGE,
-      payload: {
-        id:        `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        role,       // 'user' | 'assistant'
-        content,
-        files,
-        timestamp: nowISO(),
-      },
-    });
-  }, []);
+      /* 1. Add user message optimistically */
+      const userMsg = createUserMessage(text, files);
+      dispatch({ type: ADD_MSG, payload: userMsg });
+      dispatch({ type: SET_LOADING, payload: true });
+      dispatch({ type: SET_ERROR,   payload: null });
 
-  const setFiles = useCallback((files) => {
-    dispatch({ type: Actions.SET_FILES, payload: files });
-  }, []);
+      /* 2. Mark user message as sent */
+      dispatch({ type: UPDATE_MSG, payload: { id: userMsg.id, status: 'sent' } });
 
-  const addFiles = useCallback((files) => {
-    dispatch({ type: Actions.ADD_FILES, payload: files });
-  }, []);
+      try {
+        /* 3. Call webhook */
+        const { reply } = await sendToWebhook({
+          message:   text,
+          files:     files.map((fp) => fp.file),
+          sessionId: state.sessionId,
+        });
 
-  const removeFile = useCallback((index) => {
-    dispatch({ type: Actions.REMOVE_FILE, payload: index });
-  }, []);
+        /* 4. Add assistant reply */
+        const assistantMsg = createAssistantMessage(reply);
+        dispatch({ type: ADD_MSG, payload: assistantMsg });
+      } catch (err) {
+        const errText =
+          err?.statusCode === 404
+            ? '⚠️ Webhook not found. Please check the endpoint URL.'
+            : err?.statusCode >= 500
+            ? '⚠️ The server encountered an error. Please try again later.'
+            : `⚠️ Could not reach the assistant: ${err.message}`;
 
-  const clearFiles = useCallback(() => {
-    dispatch({ type: Actions.CLEAR_FILES });
-  }, []);
-
-  const setTyping = useCallback((bool) => {
-    dispatch({ type: Actions.SET_TYPING, payload: bool });
-  }, []);
-
-  const setError = useCallback((msg) => {
-    dispatch({ type: Actions.SET_ERROR, payload: msg });
-  }, []);
-
-  const clearError = useCallback(() => {
-    dispatch({ type: Actions.CLEAR_ERROR });
-  }, []);
-
-  const setTheme = useCallback((theme) => {
-    dispatch({ type: Actions.SET_THEME, payload: theme });
-    document.documentElement.setAttribute('data-theme', theme);
-  }, []);
-
-  const clearHistory = useCallback(() => {
-    dispatch({ type: Actions.CLEAR_HISTORY });
-  }, []);
-
-  // ── Memoized context value (prevents unnecessary re-renders) ─
-  const value = useMemo(() => ({
-    // State
-    messages:  state.messages,
-    files:     state.files,
-    isTyping:  state.isTyping,
-    error:     state.error,
-    sessionId: state.sessionId,
-    theme:     state.theme,
-
-    // Action creators
-    addMessage,
-    setFiles,
-    addFiles,
-    removeFile,
-    clearFiles,
-    setTyping,
-    setError,
-    clearError,
-    setTheme,
-    clearHistory,
-
-    // Raw dispatch (for advanced use)
-    dispatch,
-  }), [
-    state,
-    addMessage, setFiles, addFiles, removeFile, clearFiles,
-    setTyping, setError, clearError, setTheme, clearHistory,
-  ]);
-
-  // Sync theme attribute to <html> on mount and changes
-  if (typeof document !== 'undefined') {
-    document.documentElement.setAttribute('data-theme', state.theme);
-  }
-
-  return (
-    <ChatContext.Provider value={value}>
-      {children}
-    </ChatContext.Provider>
+        dispatch({ type: ADD_MSG, payload: createErrorMessage(errText) });
+        dispatch({ type: SET_ERROR, payload: err.message });
+      } finally {
+        dispatch({ type: SET_LOADING, payload: false });
+      }
+    },
+    [state.sessionId]
   );
+
+  /* ── clearChat ───────────────────────────────────────────────── */
+  const clearChat = useCallback(() => {
+    dispatch({ type: CLEAR_CHAT });
+  }, []);
+
+  /* ── context value ───────────────────────────────────────────── */
+  const value = useMemo(
+    () => ({
+      messages:    state.messages,
+      isLoading:   state.isLoading,
+      error:       state.error,
+      sessionId:   state.sessionId,
+      sendMessage,
+      clearChat,
+    }),
+    [state, sendMessage, clearChat]
+  );
+
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }
 
-// ─────────────────────────────────────────────
-// Consumer Hook
-// ─────────────────────────────────────────────
-
-/**
- * Returns the full ChatContext value.
- * Must be used inside a <ChatProvider>.
- */
+/* ── Custom hook ──────────────────────────────────────────────────── */
 export function useChatContext() {
   const ctx = useContext(ChatContext);
-  if (!ctx) {
-    throw new Error('useChatContext must be used within a <ChatProvider>');
-  }
+  if (!ctx) throw new Error('useChatContext must be used inside <ChatProvider>');
   return ctx;
 }
