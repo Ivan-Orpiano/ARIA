@@ -1,39 +1,50 @@
-import { useCallback, useRef } from "react";
-import { useChatContext } from "../context/ChatContext";
-import { validateFiles } from "../utils/fileUtils";
+import { useState, useCallback, useRef } from 'react';
+import {
+  createFilePreview,
+  revokePreview,
+  validateFile,
+  MAX_FILES_PER_MSG,
+} from '../utils/fileUtils';
 
-
-
+/**
+ * useFileUpload – manages selected file state, validation,
+ * drag-and-drop, and cleanup.
+ */
 export function useFileUpload() {
-    const { files, addFiles, removeFile, clearFiles, setError} = useChatContext();
+  const [files, setFiles]         = useState([]); // FilePreview[]
+  const [dragActive, setDragActive] = useState(false);
+  const [fileErrors, setFileErrors] = useState([]);
+  const inputRef = useRef(null);
 
-    const fileInputRef=useRef(null);
+  /* ── Add files ───────────────────────────────────────────────── */
+  const addFiles = useCallback((rawFiles) => {
+    const incoming = Array.from(rawFiles);
+    const errors   = [];
+    const valid    = [];
 
-    const handleAddFiles = useCallback((fileList) => {
-        if(!fileList || fileList.length === 0) return;
+    for (const file of incoming) {
+      const { valid: ok, error } = validateFile(file);
+      if (!ok) { errors.push(`${file.name}: ${error}`); continue; }
+      valid.push(file);
+    }
 
-        const {valid, error} = validateFiles (fileList, files);
+    setFileErrors(errors);
 
-        if(errors.length > 0) {
-            setError(errors.join(' · '));
-        }
+    setFiles((prev) => {
+      const combined = [...prev, ...valid.map(createFilePreview)];
+      /* Enforce max cap */
+      return combined.slice(0, MAX_FILES_PER_MSG);
+    });
+  }, []);
 
-        if(valid.length > 0) {
-            addFiles(valid);
-        }
-    }, [files, addFiles, setError]);
+  /* ── Remove a single file ─────────────────────────────────────── */
+  const removeFile = useCallback((id) => {
+    setFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target) revokePreview(target);
+      return prev.filter((f) => f.id !== id);
+    });
+  }, []);
 
-    const openPicker = useCallback(() => {
-        fileInputRef.current?.click();
-    }, []);
-
-
-    return {
-        files, 
-        fileInputRef,
-        addFiles: handleAddFiles,
-        removeFile,
-        clearFiles,
-        openPicker,
-    };
+ 
 }
