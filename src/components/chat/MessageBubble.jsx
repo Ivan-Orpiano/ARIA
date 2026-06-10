@@ -118,3 +118,71 @@ const s = {
     display:      'block',
   },
 };
+
+/* ── Status icon ─────────────────────────────────────────────────── */
+function StatusIcon({ status }) {
+  if (status === 'sending') return <span style={s.statusIcon}>⏳</span>;
+  if (status === 'sent')    return <span style={{ ...s.statusIcon, color: 'var(--accent)' }}>✓</span>;
+  return null;
+}
+
+/* ── File attachment chip ────────────────────────────────────────── */
+function FileChip({ filePreview }) {
+  const meta = getFileMeta(filePreview);
+
+  if (filePreview.preview) {
+    return (
+      <img
+        src={filePreview.preview}
+        alt={filePreview.name}
+        style={s.imagePreview}
+      />
+    );
+  }
+
+  return (
+    <div style={s.fileChip(meta)}>
+      <span style={s.fileIcon}>{meta.icon}</span>
+      <div style={s.fileInfo}>
+        <span style={s.fileName}>{filePreview.name}</span>
+        <span style={s.fileMeta}>
+          {meta.label} · {formatFileSize(filePreview.size)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── MessageBubble ───────────────────────────────────────────────── */
+export default function MessageBubble({ message }) {
+  const isUser = message.role === 'user';
+  const isError = !!message.isError;
+
+  return (
+    <div style={s.row(isUser)}>
+      <Avatar role={isUser ? 'user' : 'assistant'} />
+
+      <div style={s.bubble(isUser, isError)}>
+        {/* Message text */}
+        {message.text && (
+          <p style={s.text(isUser)}>{message.text}</p>
+        )}
+
+        {/* File attachments */}
+        {message.files && message.files.length > 0 && (
+          <div style={s.filesArea}>
+            {message.files.map((fp) => (
+              <FileChip key={fp.id} filePreview={fp} />
+            ))}
+          </div>
+        )}
+
+        {/* Timestamp + status */}
+        <div style={s.meta(isUser)}>
+          <span style={s.timestamp}>{formatTime(message.timestamp)}</span>
+          {isUser && <StatusIcon status={message.status} />}
+        </div>
+      </div>
+    </div>
+  );
+}
