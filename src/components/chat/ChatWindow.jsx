@@ -128,3 +128,15 @@ function WelcomeScreen({ onSuggestionClick }) {
   );
 }
 
+const ChatWindow = () => {
+  return (
+    <div className="chat-window">
+      {/* Your chat layout code goes here */}
+      <h1>Chat Window</h1>
+    </div>
+  );
+};
+
+// Line 131 (This must match the name above exactly!)
+export default ChatWindow;
+

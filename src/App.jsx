@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import './styles/globals.css';
 import { ChatProvider } from './context/ChatContext';
-import { useChat }      from './hooks/useChat';
+import { useChat }      from './hooks/useChats';
 import ChatWindow       from './components/chat/ChatWindow';
 import ChatInput        from './components/input/ChatInput';
 
