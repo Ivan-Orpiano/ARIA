@@ -100,3 +100,122 @@ const s = {
     justifyContent: 'space-between',
   },
 };
+
+/* ── ChatInput ─────────────────────────────────────────────────────── */
+export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
+  const [text, setText]         = useState('');
+  const [focused, setFocused]   = useState(false);
+  const textareaRef             = useRef(null);
+
+  const {
+    files, fileErrors, dragActive,
+    inputRef, removeFile, clearFiles,
+    openPicker, onDragEnter, onDragLeave, onDragOver, onDrop, onInputChange,
+    hasFiles,
+  } = useFileUpload();
+
+  /* Auto-resize textarea */
+  const resizeTextarea = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, []);
+
+  useEffect(() => { resizeTextarea(); }, [text, resizeTextarea]);
+
+  /* Handle prefill from suggestion chips */
+  useEffect(() => {
+    if (prefillText) {
+      setText(prefillText);
+      textareaRef.current?.focus();
+    }
+  }, [prefillText]);
+
+  /* Send message */
+  const handleSend = useCallback(() => {
+    if (isLoading || isEmpty(text, files)) return;
+    onSend(text, files);
+    setText('');
+    clearFiles();
+    /* Reset textarea height */
+    if (textareaRef.current) textareaRef.current.style.height = 'auto';
+  }, [text, files, isLoading, onSend, clearFiles]);
+
+  /* Keyboard shortcut: Enter to send, Shift+Enter for newline */
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }, [handleSend]);
+
+  const canSend = !isEmpty(text, files) && !isLoading;
+
+  return (
+    <div
+      style={s.outer}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+    >
+      {/* File previews & drag overlay */}
+      <FileUpload
+        files={files}
+        fileErrors={fileErrors}
+        dragActive={dragActive}
+        inputRef={inputRef}
+        onInputChange={onInputChange}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        removeFile={removeFile}
+      />
+
+      {/* Input bar */}
+      <div style={{ ...s.bar, ...(focused ? s.barFocused : {}) }}>
+        <textarea
+          ref={textareaRef}
+          style={s.textarea}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="Ask ARIA anything…"
+          rows={1}
+          aria-label="Message input"
+          disabled={isLoading}
+        />
+
+        <div style={s.actions}>
+          {/* Attach file button */}
+          <button
+            style={s.iconBtn(hasFiles)}
+            onClick={openPicker}
+            title={`Attach files (${files.length}/${MAX_FILES_PER_MSG})`}
+            aria-label="Attach files"
+            disabled={isLoading}
+          >
+            📎
+          </button>
+
+          {/* Send button */}
+          <button
+            style={s.sendBtn(canSend, isLoading)}
+            onClick={handleSend}
+            title="Send message (Enter)"
+            aria-label="Send message"
+            disabled={!canSend}
+          >
+            {isLoading ? '⏳' : '➤'}
+          </button>
+        </div>
+      </div>
+
+      {/* Hint bar */}
+      <div style={s.hint}>
+        <span>Enter to send · Shift+Enter for new line</span>
+        {hasFiles && <span>{files.length}/{MAX_FILES_PER_MSG} file(s)</span>}
+      </div>
+    </div>
+  );
+}
