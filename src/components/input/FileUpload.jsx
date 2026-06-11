@@ -148,4 +148,50 @@ export default function FileUpload({
   onDragLeave,
   onDrop,
   removeFile,
-})
+}) {
+  return (
+    <>
+      {/* Hidden file input */}
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept={ACCEPT_STRING}
+        style={s.input}
+        onChange={onInputChange}
+        aria-hidden="true"
+      />
+
+      {/* Full-screen drop overlay */}
+      <div
+        style={s.dropOverlay(dragActive)}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        onDragOver={(e) => e.preventDefault()}
+      >
+        <div style={s.dropLabel}>📎 Drop files here</div>
+        <div style={s.dropSub}>
+          Up to {MAX_FILES_PER_MSG} files · 20 MB each
+        </div>
+      </div>
+
+      {/* File preview chips */}
+      {files.length > 0 && (
+        <div style={s.strip}>
+          {files.map((fp) => (
+            <FileChip key={fp.id} fp={fp} onRemove={removeFile} />
+          ))}
+        </div>
+      )}
+
+      {/* Validation errors */}
+      {fileErrors.length > 0 && (
+        <div style={s.errorArea}>
+          {fileErrors.map((e, i) => (
+            <p key={i} style={s.errorMsg}>⚠ {e}</p>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
