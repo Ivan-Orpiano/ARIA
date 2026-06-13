@@ -139,3 +139,178 @@ function WelcomeScreen({ onSuggestionClick }) {
     </div>
   );
 }
+
+/* ── Typing indicator ────────────────────────────────────── */
+function TypingIndicator() {
+  return (
+    <div style={{ display:'flex', alignItems:'flex-end', gap:8,
+      animation:'fadeInUp 0.3s ease both', marginBottom:12 }}>
+      <div style={{
+        width:26, height:26, borderRadius:'50%',
+        background:'linear-gradient(135deg,#00F5A0,#00C8FF)',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        fontSize:11, flexShrink:0,
+        boxShadow:'0 0 10px var(--acc-glow)',
+      }}>✦</div>
+      <div style={{
+        padding:'12px 15px', background:'var(--bg-card)',
+        border:'1px solid var(--brd-mid)',
+        borderRadius:'4px 16px 16px 16px',
+        display:'flex', gap:5, alignItems:'center',
+      }}>
+        {[0,1,2].map(i => (
+          <div key={i} style={{
+            width:6, height:6, borderRadius:'50%',
+            background:'var(--acc)',
+            animation:`typingDot 1.4s ease-in-out infinite`,
+            animationDelay:`${i * 0.18}s`,
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Markdown-lite text renderer ─────────────────────────── */
+function FormattedText({ text }) {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
+      {text.split('\n').map((line, i) => {
+        if (!line) return <div key={i} style={{ height:7 }} />;
+        const bold = (s) => s.replace(/\*\*(.*?)\*\*/g, (_, m) =>
+          `<span style="color:var(--tx1);font-weight:600">${m}</span>`
+        );
+        if (line.startsWith('• ') || line.startsWith('- ')) {
+          return (
+            <div key={i} style={{ display:'flex', gap:7, marginTop:2 }}>
+              <span style={{ color:'var(--acc)', flexShrink:0 }}>•</span>
+              <span dangerouslySetInnerHTML={{ __html: bold(line.replace(/^[•\-] /,'')) }} />
+            </div>
+          );
+        }
+        return <div key={i} dangerouslySetInnerHTML={{ __html: bold(line) }} />;
+      })}
+    </div>
+  );
+}
+
+/* ── Message bubble ──────────────────────────────────────── */
+function MessageBubble({ message }) {
+  const isUser = message.role === 'user';
+  const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard?.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [message.content]);
+
+  return (
+    <div
+      style={{ marginBottom:12, animation:'fadeInUp 0.3s cubic-bezier(0.34,1.56,0.64,1) both' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{
+        display:'flex',
+        flexDirection: isUser ? 'row-reverse' : 'row',
+        alignItems:'flex-end', gap:8, position:'relative',
+      }}>
+        {/* AI avatar */}
+        {!isUser && (
+          <div style={{
+            width:26, height:26, borderRadius:'50%',
+            background:'linear-gradient(135deg,#00F5A0,#00C8FF)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:11, flexShrink:0, alignSelf:'flex-end',
+            boxShadow:'0 0 10px var(--acc-glow)',
+          }}>✦</div>
+        )}
+
+        {/* Bubble */}
+        <div style={{ maxWidth:'70%', position:'relative' }}>
+          <div style={{
+            padding:'10px 15px',
+            borderRadius: isUser ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+            background: isUser
+              ? 'linear-gradient(135deg,rgba(255,107,157,0.14),rgba(255,107,157,0.07))'
+              : 'var(--bg-card)',
+            border: isUser
+              ? '1px solid rgba(255,107,157,0.22)'
+              : '1px solid var(--brd-mid)',
+            boxShadow: isUser
+              ? '0 2px 12px var(--usr-glow)'
+              : '0 2px 8px rgba(0,0,0,0.4)',
+            fontSize:13, lineHeight:1.65,
+            fontFamily:'var(--font-body)', color:'var(--tx1)',
+          }}>
+            {isUser
+              ? <div>{message.content}</div>
+              : <FormattedText text={message.content} />
+            }
+            {message.streaming && (
+              <span style={{
+                display:'inline-block', width:2, height:13,
+                background:'var(--acc)', marginLeft:2,
+                verticalAlign:'text-bottom',
+                animation:'blink 0.75s ease-in-out infinite',
+              }} />
+            )}
+            {/* File attachments */}
+            {message.files?.length > 0 && (
+              <div style={{
+                display:'flex', flexWrap:'wrap', gap:5,
+                marginTop:6, paddingTop:6,
+                borderTop:'1px solid var(--brd-sub)',
+              }}>
+                {message.files.map((f, i) => (
+                  <div key={i} style={{
+                    display:'inline-flex', alignItems:'center', gap:4,
+                    padding:'2px 8px', background:'var(--bg-el)',
+                    border:'1px solid var(--brd-mid)', borderRadius:5,
+                    fontSize:10, color:'var(--tx2)', fontFamily:'var(--font-mono)',
+                  }}>
+                    📎 {f.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Hover actions */}
+          <div style={{
+            position:'absolute', bottom:-22,
+            [isUser ? 'right' : 'left']:0,
+            display:'flex', gap:3, zIndex:5,
+            opacity: hovered ? 1 : 0,
+            transition:'opacity 0.15s ease',
+          }}>
+            <button
+              onClick={handleCopy}
+              style={{
+                background:'var(--bg-surf)', border:'1px solid var(--brd-mid)',
+                borderRadius:4, cursor:'pointer', color:'var(--tx3)',
+                fontSize:10, padding:'2px 7px', fontFamily:'var(--font-mono)',
+                transition:'all 0.12s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background='var(--bg-el)'; e.currentTarget.style.color='var(--tx1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='var(--bg-surf)'; e.currentTarget.style.color='var(--tx3)'; }}
+            >
+              {copied ? '✓ Copied' : '⎘ Copy'}
+            </button>
+          </div>
+        </div>
+
+        {/* Timestamp on hover */}
+        <div style={{
+          fontSize:9, color:'var(--tx3)', fontFamily:'var(--font-mono)',
+          alignSelf:'flex-end', flexShrink:0,
+          opacity: hovered ? 1 : 0, transition:'opacity 0.2s ease',
+        }}>
+          {new Intl.DateTimeFormat('en',{ hour:'2-digit', minute:'2-digit' }).format(message.timestamp)}
+        </div>
+      </div>
+    </div>
+  );
+}
