@@ -55,3 +55,54 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
 
 ::selection { background: rgba(0,245,160,0.18); color: var(--acc); }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px var(--acc-glow); }
+  50%       { box-shadow: 0 0 42px var(--acc-glow), 0 0 72px rgba(0,200,255,0.12); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.44; transform: scale(0.82); }
+}
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%            { transform: translateY(-6px); opacity: 1; }
+}
+@keyframes orb1 {
+  from { transform: rotate(0deg)   translateX(46px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(46px) rotate(-360deg); }
+}
+@keyframes orb2 {
+  from { transform: rotate(130deg) translateX(58px) rotate(-130deg); }
+  to   { transform: rotate(490deg) translateX(58px) rotate(-490deg); }
+}
+@keyframes orb3 {
+  from { transform: rotate(250deg) translateX(38px) rotate(-250deg); }
+  to   { transform: rotate(610deg) translateX(38px) rotate(-610deg); }
+}
+@keyframes aurora {
+  0%, 100% { transform: translate(0,0) scale(1); opacity: 0.5; }
+  25%       { transform: translate(2%,-4%) scale(1.04); opacity: 0.7; }
+  50%       { transform: translate(-2%,3%) scale(0.96); opacity: 0.4; }
+  75%       { transform: translate(1%,3%) scale(1.02); opacity: 0.6; }
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.82) translateY(12px); }
+  65%  { transform: scale(1.03) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
