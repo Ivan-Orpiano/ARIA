@@ -316,9 +316,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 <br/><br/>
 
-
-<br/><br/>
-
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0A0E1A,50:00B4D8,100:3DFFC0&height=120&section=footer&animation=twinkling" width="100%"/>
 
 </div>
