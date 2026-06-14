@@ -53,13 +53,13 @@ Send messages, upload documents, and let ARIA handle the heavy lifting: drafting
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                                                                       │
+│                                                                     │
 │    User  ──►  React UI  ──►  n8n Webhook  ──►  LangChain Agent      │
-│                                                        │              │
-│                                                    OpenAI GPT        │
-│                                                        │              │
-│    User  ◄──  React UI  ◄──  n8n Webhook  ◄──  AI Response         │
-│                                                                       │
+│                                                        │            │
+│                                                    OpenAI GPT       │
+│                                                        │            │
+│    User  ◄──  React UI  ◄──  n8n Webhook  ◄──  AI Response          │
+│                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
