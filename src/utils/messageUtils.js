@@ -1,71 +1,43 @@
-// for format messages
-let _counter = 0;
+let _seq = 0;
 
-/* ── Generate a unique message ID ───────────────────────────────── */
-export const genId = () => `msg_${Date.now()}_${++_counter}`;
+/**
+ * Generates a unique, sequential message ID.
+ * @param {'user'|'assistant'|'error'} role
+ * @returns {string}
+ */
+export function generateMessageId(role = 'msg') {
+  return `${role}_${Date.now()}_${++_seq}`;
+}
 
-/* ── Generate a session ID ───────────────────────────────────────── */
-export const genSessionId = () =>
-  `session_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+/**
+ * Formats a timestamp for the message meta bar.
+ * Delegates to Intl for locale-aware output.
+ * @param {Date|string} value
+ * @returns {string}
+ */
+export function formatTime(value) {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('en', {
+    hour:   '2-digit',
+    minute: '2-digit',
+  }).format(d);
+}
 
-/* ── Format timestamp ────────────────────────────────────────────── */
-export const formatTime = (date) => {
-  const d = date instanceof Date ? date : new Date(date);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
+/**
+ * Strips leading markdown heading characters for display purposes.
+ * @param {string} text
+ * @returns {string}
+ */
+export function stripHeadings(text) {
+  return text.replace(/^#{1,6}\s+/gm, '');
+}
 
-export const formatDate = (date) => {
-  const d   = date instanceof Date ? date : new Date(date);
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  if (isToday) return 'Today';
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-/* ── Create a user message object ────────────────────────────────── */
-export const createUserMessage = (text, files = []) => ({
-  id:        genId(),
-  role:      'user',
-  text:      text.trim(),
-  files:     files,
-  timestamp: new Date(),
-  status:    'sending',
-});
-
-/* ── Create an AI message object ─────────────────────────────────── */
-export const createAssistantMessage = (text = '') => ({
-  id:        genId(),
-  role:      'assistant',
-  text,
-  files:     [],
-  timestamp: new Date(),
-  status:    'done',
-});
-
-/* ── Create an error message object ─────────────────────────────── */
-export const createErrorMessage = (errorText) => ({
-  id:        genId(),
-  role:      'assistant',
-  text:      errorText,
-  files:     [],
-  timestamp: new Date(),
-  status:    'error',
-  isError:   true,
-});
-
-/* ── Greeting suggestions ────────────────────────────────────────── */
-export const SUGGESTIONS = [
-  'Summarize the attached document',
-  'Draft a professional email response',
-  'Schedule a meeting for next week',
-  'Create a to-do list from this brief',
-  'Translate this text to Spanish',
-  'Proofread and improve my writing',
-];
-
-/* ── Naive check whether message looks empty ─────────────────────── */
-export const isEmpty = (text, files) =>
-  (!text || text.trim().length === 0) && (!files || files.length === 0);
+/**
+ * Counts words in a string.
+ * @param {string} text
+ * @returns {number}
+ */
+export function wordCount(text) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}

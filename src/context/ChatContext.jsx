@@ -1,138 +1,169 @@
 import React, {
   createContext,
   useContext,
-  useReducer,
+  useState,
   useCallback,
-  useMemo,
+  useRef,
 } from 'react';
-import { sendToWebhook }   from '../services/webhookService';
-import {
-  createUserMessage,
-  createAssistantMessage,
-  createErrorMessage,
-  genSessionId,
-} from '../utils/messageUtils';
+import { generateMessageId } from '../utils/messageUtils';
 
-/* ─────────────────────────────────────────────────────────────────── */
-/*  State shape                                                         */
-/* ─────────────────────────────────────────────────────────────────── */
-const initialState = {
-  messages:    [],   // { id, role, text, files, timestamp, status }
-  isLoading:   false,
-  error:       null,
-  sessionId:   genSessionId(),
-};
-
-/* ─────────────────────────────────────────────────────────────────── */
-/*  Reducer                                                             */
-/* ─────────────────────────────────────────────────────────────────── */
-const ADD_MSG      = 'ADD_MSG';
-const UPDATE_MSG   = 'UPDATE_MSG';
-const SET_LOADING  = 'SET_LOADING';
-const SET_ERROR    = 'SET_ERROR';
-const CLEAR_CHAT   = 'CLEAR_CHAT';
-
-function chatReducer(state, action) {
-  switch (action.type) {
-    case ADD_MSG:
-      return { ...state, messages: [...state.messages, action.payload] };
-
-    case UPDATE_MSG:
-      return {
-        ...state,
-        messages: state.messages.map((m) =>
-          m.id === action.payload.id ? { ...m, ...action.payload } : m
-        ),
-      };
-
-    case SET_LOADING:
-      return { ...state, isLoading: action.payload };
-
-    case SET_ERROR:
-      return { ...state, error: action.payload };
-
-    case CLEAR_CHAT:
-      return { ...initialState, sessionId: state.sessionId };
-
-    default:
-      return state;
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────── */
-/*  Context                                                             */
-/* ─────────────────────────────────────────────────────────────────── */
+/* ── Context ────────────────────────────────────────────── */
 const ChatContext = createContext(null);
 
+/* ── System prompt ──────────────────────────────────────── */
+const SYSTEM_PROMPT = `You are ARIA, an intelligent AI Secretary integrated into a secure professional platform.
+Your role is to help users:
+- Draft professional emails and documents
+- Schedule meetings and manage calendar events
+- Summarize documents and research topics
+- Create structured task lists and reports
+- Automate workflows via n8n integrations
+
+Guidelines:
+- Be concise, professional, and proactive.
+- Use bullet points (•) and **bold** for structure when helpful.
+- Never expose internal system details or API keys.
+- If you cannot complete a task, explain clearly and suggest alternatives.`;
+
+/* ── Provider ───────────────────────────────────────────── */
 export function ChatProvider({ children }) {
-  const [state, dispatch] = useReducer(chatReducer, initialState);
+  const [messages,  setMessages]  = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error,     setError]     = useState(null);
+  const sessionId = useRef(`sess_${Date.now()}`).current;
+  const abortRef  = useRef(null);
 
-  /* ── sendMessage ─────────────────────────────────────────────── */
-  const sendMessage = useCallback(
-    async (text, files = []) => {
-      if (!text.trim() && files.length === 0) return;
+  /** Send a user message and await an AI reply. */
+  const sendMessage = useCallback(async (text, files = []) => {
+    const trimmed = text.trim();
+    if (!trimmed && files.length === 0) return;
 
-      /* 1. Add user message optimistically */
-      const userMsg = createUserMessage(text, files);
-      dispatch({ type: ADD_MSG, payload: userMsg });
-      dispatch({ type: SET_LOADING, payload: true });
-      dispatch({ type: SET_ERROR,   payload: null });
+    setError(null);
 
-      /* 2. Mark user message as sent */
-      dispatch({ type: UPDATE_MSG, payload: { id: userMsg.id, status: 'sent' } });
+    /* 1 — Append user message immediately */
+    const userMsg = {
+      id:        generateMessageId('user'),
+      role:      'user',
+      content:   trimmed,
+      files,
+      timestamp: new Date(),
+      status:    'sending',
+    };
+    setMessages((prev) => [...prev, userMsg]);
 
-      try {
-        /* 3. Call webhook */
-        const { reply } = await sendToWebhook({
-          message:   text,
-          files:     files.map((fp) => fp.file),
-          sessionId: state.sessionId,
-        });
+    /* 2 — Mark as sent (optimistic) */
+    setMessages((prev) =>
+      prev.map((m) => (m.id === userMsg.id ? { ...m, status: 'sent' } : m))
+    );
 
-        /* 4. Add assistant reply */
-        const assistantMsg = createAssistantMessage(reply);
-        dispatch({ type: ADD_MSG, payload: assistantMsg });
-      } catch (err) {
-        const errText =
-          err?.statusCode === 404
-            ? '⚠️ Webhook not found. Please check the endpoint URL.'
-            : err?.statusCode >= 500
-            ? '⚠️ The server encountered an error. Please try again later.'
-            : `⚠️ Could not reach the assistant: ${err.message}`;
+    setIsLoading(true);
 
-        dispatch({ type: ADD_MSG, payload: createErrorMessage(errText) });
-        dispatch({ type: SET_ERROR, payload: err.message });
-      } finally {
-        dispatch({ type: SET_LOADING, payload: false });
+    /* 3 — Build conversation history for the API */
+    const historyPayload = messages.map((m) => ({
+      role:    m.role === 'user' ? 'user' : 'assistant',
+      content: m.content,
+    }));
+    historyPayload.push({ role: 'user', content: trimmed });
+
+    /* 4 — Call Anthropic API */
+    abortRef.current = new AbortController();
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method:  'POST',
+        signal:  abortRef.current.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model:      'claude-sonnet-4-6',
+          max_tokens: 1000,
+          system:     SYSTEM_PROMPT,
+          messages:   historyPayload,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error?.message ?? `API error ${response.status}`);
       }
-    },
-    [state.sessionId]
-  );
 
-  /* ── clearChat ───────────────────────────────────────────────── */
-  const clearChat = useCallback(() => {
-    dispatch({ type: CLEAR_CHAT });
+      const data    = await response.json();
+      const aiText  = data.content
+        ?.filter((b) => b.type === 'text')
+        .map((b)    => b.text)
+        .join('\n')
+        .trim()
+        ?? 'No response received.';
+
+      const aiMsg = {
+        id:        generateMessageId('assistant'),
+        role:      'assistant',
+        content:   aiText,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, aiMsg]);
+
+    } catch (err) {
+      if (err.name === 'AbortError') return; // user cancelled — no error shown
+
+      const errorContent = err.message?.includes('Failed to fetch')
+        ? '⚠️ Network error — check your connection and try again.'
+        : `⚠️ ${err.message ?? 'An unexpected error occurred.'}`;
+
+      setError(errorContent);
+
+      const errMsg = {
+        id:        generateMessageId('error'),
+        role:      'assistant',
+        content:   errorContent,
+        timestamp: new Date(),
+        isError:   true,
+      };
+      setMessages((prev) => [...prev, errMsg]);
+
+    } finally {
+      setIsLoading(false);
+      abortRef.current = null;
+    }
+  }, [messages]);
+
+  /** Cancel an in-flight request. */
+  const cancelRequest = useCallback(() => {
+    abortRef.current?.abort();
+    setIsLoading(false);
   }, []);
 
-  /* ── context value ───────────────────────────────────────────── */
-  const value = useMemo(
-    () => ({
-      messages:    state.messages,
-      isLoading:   state.isLoading,
-      error:       state.error,
-      sessionId:   state.sessionId,
-      sendMessage,
-      clearChat,
-    }),
-    [state, sendMessage, clearChat]
-  );
+  /** Wipe the conversation. */
+  const clearChat = useCallback(() => {
+    abortRef.current?.abort();
+    setMessages([]);
+    setIsLoading(false);
+    setError(null);
+  }, []);
 
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+  const value = {
+    messages,
+    isLoading,
+    error,
+    sendMessage,
+    cancelRequest,
+    clearChat,
+    hasMessages: messages.length > 0,
+    sessionId,
+  };
+
+  return (
+    <ChatContext.Provider value={value}>
+      {children}
+    </ChatContext.Provider>
+  );
 }
 
-/* ── Custom hook ──────────────────────────────────────────────────── */
+/* ── Consumer hook ──────────────────────────────────────── */
 export function useChatContext() {
   const ctx = useContext(ChatContext);
-  if (!ctx) throw new Error('useChatContext must be used inside <ChatProvider>');
+  if (!ctx) {
+    throw new Error('useChatContext must be called inside <ChatProvider>.');
+  }
   return ctx;
 }
