@@ -1,14 +1,3 @@
-/**
- * WelcomeScreen.jsx
- *
- * Displayed when the conversation is empty.
- * Shows the animated ARIA orbit logo, a brief description,
- * clickable suggestion chips, and capability badges.
- *
- * Props:
- *   onSelectSuggestion(text: string) — called when user taps a chip
- */
-
 import React from 'react';
 
 /* ── Suggestion list ──────────────────────────────────────── */

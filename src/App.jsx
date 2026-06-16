@@ -5,9 +5,6 @@ import { useChat }      from './hooks/useChats';
 import ChatWindow       from './components/chat/ChatWindow';
 import ChatInput        from './components/input/ChatInput';
 
-/* ─────────────────────────────────────────────────────────────────── */
-/*  Inner layout (needs access to ChatContext)                          */
-/* ─────────────────────────────────────────────────────────────────── */
 
 const s = {
   appShell: {

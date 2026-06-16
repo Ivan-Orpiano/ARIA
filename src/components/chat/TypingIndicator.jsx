@@ -1,9 +1,3 @@
-/**
- * TypingIndicator.jsx
- *
- * Animated three-dot indicator shown while the AI is generating a response.
- * Uses ARIA live region so screen readers announce the state change.
- */
 
 import React from 'react';
 import Avatar from '../ui/Avatar';
