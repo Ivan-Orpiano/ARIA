@@ -1,108 +1,209 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
 
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS — single source of truth.
+   Every component MUST use these names only.
+───────────────────────────────────────────── */
 :root {
+  /* Backgrounds */
   --bg-base:     #060A14;
-  --bg-surf:     #090E1C;
+  --bg-surface:  #090E1C;
   --bg-card:     #0D1221;
-  --bg-el:       #131A28;
-  --bg-hov:      #182033;
+  --bg-elevated: #131A28;
+  --bg-hover:    #182033;
 
-  --brd-sub:     rgba(255,255,255,0.05);
-  --brd-mid:     rgba(255,255,255,0.09);
-  --brd-str:     rgba(255,255,255,0.14);
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-mid:    rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
 
-  --acc:         #00F5A0;
-  --acc-dim:     rgba(0,245,160,0.10);
-  --acc-glow:    rgba(0,245,160,0.22);
-  --blue:        #00C8FF;
+  /* Accent — Teal */
+  --accent:      #00F5A0;
+  --accent-dim:  rgba(0, 245, 160, 0.10);
+  --accent-glow: rgba(0, 245, 160, 0.22);
+  --accent-blue: #00C8FF;
 
-  --usr:         #FF6B9D;
-  --usr-dim:     rgba(255,107,157,0.10);
-  --usr-glow:    rgba(255,107,157,0.18);
+  /* User messages — Pink */
+  --user-color: #FF6B9D;
+  --user-dim:   rgba(255, 107, 157, 0.10);
+  --user-glow:  rgba(255, 107, 157, 0.18);
 
-  --tx1:         #EDF0FA;
-  --tx2:         #8892A8;
-  --tx3:         #49566A;
+  /* Text */
+  --text-primary:   #EDF0FA;
+  --text-secondary: #8892A8;
+  --text-muted:     #49566A;
 
-  --font-display:'Syne', sans-serif;
-  --font-body:   'DM Sans', sans-serif;
-  --font-mono:   'JetBrains Mono', monospace;
+  /* Semantic */
+  --error:   #FF4D6A;
+  --warning: #FFB800;
+  --success: #00F5A0;
 
-  --r-sm: 6px;  --r-md: 12px;  --r-lg: 18px;
-  --r-xl: 24px; --r-full: 9999px;
+  /* Shadows */
+  --shadow-sm:   0 2px 8px  rgba(0, 0, 0, 0.40);
+  --shadow-md:   0 4px 18px rgba(0, 0, 0, 0.50);
+  --shadow-user: 0 2px 12px rgba(255, 107, 157, 0.18);
+  --shadow-ai:   0 2px 10px rgba(0, 245, 160, 0.10);
 
-  --sw: 260px;
+  /* Typography */
+  --font-display: 'Syne',          sans-serif;
+  --font-body:    'DM Sans',       sans-serif;
+  --font-mono:    'JetBrains Mono',monospace;
+
+  /* Border radii */
+  --radius-sm:   6px;
+  --radius-md:   12px;
+  --radius-lg:   18px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* Layout */
+  --sidebar-w: 260px;
+  --header-h:   56px;
+  --input-h:    64px;
+
+  /* Transitions */
+  --transition-fast: 0.12s ease;
+  --transition-base: 0.18s ease;
+  --transition-slow: 0.30s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; }
+/* ── Reset ──────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+}
 
 body {
   font-family: var(--font-body);
-  background: var(--bg-base);
-  color: var(--tx1);
+  background:  var(--bg-base);
+  color:       var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   height: 100dvh;
 }
 
-#root { height: 100dvh; display: flex; overflow: hidden; }
+#root {
+  height: 100dvh;
+  display: flex;
+  overflow: hidden;
+}
 
+/* ── Scrollbar ──────────────────────────────── */
 ::-webkit-scrollbar       { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
 
-::selection { background: rgba(0,245,160,0.18); color: var(--acc); }
+/* ── Selection ──────────────────────────────── */
+::selection { background: rgba(0,245,160,0.18); color: var(--accent); }
+
+/* ── Focus ring ─────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Animations ─────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(28px); }
+  from { opacity: 0; transform: translateX(24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-28px); }
+  from { opacity: 0; transform: translateX(-24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
-@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px var(--acc-glow); }
-  50%       { box-shadow: 0 0 42px var(--acc-glow), 0 0 72px rgba(0,200,255,0.12); }
+
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.84) translateY(10px); }
+  65%  { transform: scale(1.02) translateY(-1px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+  50%       { box-shadow: 0 0 44px var(--accent-glow), 0 0 72px rgba(0,200,255,0.14); }
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.44; transform: scale(0.82); }
 }
+
 @keyframes typingDot {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30%            { transform: translateY(-6px); opacity: 1; }
+  0%, 60%, 100% { transform: translateY(0);   opacity: 0.4; }
+  30%            { transform: translateY(-6px); opacity: 1;   }
 }
+
 @keyframes orb1 {
   from { transform: rotate(0deg)   translateX(46px) rotate(0deg); }
   to   { transform: rotate(360deg) translateX(46px) rotate(-360deg); }
 }
+
 @keyframes orb2 {
   from { transform: rotate(130deg) translateX(58px) rotate(-130deg); }
   to   { transform: rotate(490deg) translateX(58px) rotate(-490deg); }
 }
+
 @keyframes orb3 {
   from { transform: rotate(250deg) translateX(38px) rotate(-250deg); }
   to   { transform: rotate(610deg) translateX(38px) rotate(-610deg); }
 }
+
 @keyframes aurora {
-  0%, 100% { transform: translate(0,0) scale(1); opacity: 0.5; }
-  25%       { transform: translate(2%,-4%) scale(1.04); opacity: 0.7; }
-  50%       { transform: translate(-2%,3%) scale(0.96); opacity: 0.4; }
-  75%       { transform: translate(1%,3%) scale(1.02); opacity: 0.6; }
+  0%, 100% { transform: translate(0,    0)    scale(1);    opacity: 0.5; }
+  25%       { transform: translate(2%,  -4%)  scale(1.04); opacity: 0.7; }
+  50%       { transform: translate(-2%,  3%)  scale(0.96); opacity: 0.4; }
+  75%       { transform: translate(1%,   3%)  scale(1.02); opacity: 0.6; }
 }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-@keyframes popIn {
-  0%   { opacity: 0; transform: scale(0.82) translateY(12px); }
-  65%  { transform: scale(1.03) translateY(-2px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
+}
+
+/* ── Utility classes ────────────────────────── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:   0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:  0.01ms !important;
+  }
+}
