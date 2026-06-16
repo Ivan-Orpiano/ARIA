@@ -1,5 +1,8 @@
 import React from 'react';
-import { ACCEPT_STRING, MAX_FILES_PER_MSG } from '../../utils/fileUtils';
+import { ALLOWED_MIME } from '../../utils/fileUtils';
+
+const ACCEPT_STRING = Object.keys(ALLOWED_MIME).join(',');
+const MAX_FILES_PER_MSG = 10;
 
 /* ── Inline styles ─────────────────────────────────────────────────── */
 const s = {
