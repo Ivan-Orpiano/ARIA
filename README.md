@@ -21,17 +21,19 @@
 <!-- ═══════════════════════════════════════════════════════════════ -->
 
 <p>
-  <img src="https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black&labelColor=0D1225" />
-  <img src="https://img.shields.io/badge/OpenAI-GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white&labelColor=0D1225" />
-  <img src="https://img.shields.io/badge/LangChain-🦜-1C3C3C?style=for-the-badge&logoColor=white&labelColor=0D1225" />
-  <img src="https://img.shields.io/badge/n8n-Workflow-EA4B71?style=for-the-badge&logo=n8n&logoColor=white&labelColor=0D1225" />
+<!-- React -->
+<img src="https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black&labelColor=0D1225" />
+
+<!-- OpenAI -->
+<img src="https://img.shields.io/badge/OpenAI-GPT--4-412991?style=for-the-badge&logo=openai&logoColor=white&labelColor=0D1225" />
+
+<!-- LangChain (fixed: logo=langchain instead of emoji) -->
+<img src="https://img.shields.io/badge/LangChain-v0.1-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white&labelColor=0D1225" />
+
+<!-- n8n -->
+<img src="https://img.shields.io/badge/n8n-Workflow-EA4B71?style=for-the-badge&logo=n8n&logoColor=white&labelColor=0D1225" />
 </p>
 
-<p>
-  <img src="https://img.shields.io/badge/License-MIT-3DFFC0?style=for-the-badge&labelColor=0D1225" />
-  <img src="https://img.shields.io/badge/Status-Active-3DFFC0?style=for-the-badge&labelColor=0D1225" />
-  <img src="https://img.shields.io/badge/PRs-Welcome-FF6B6B?style=for-the-badge&labelColor=0D1225" />
-</p>
 
 </div>
 
