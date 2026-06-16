@@ -1,75 +1,92 @@
-export const ACCEPTED_TYPES = {
-  // Documents
-  'application/pdf':                                     { icon: '📄', label: 'PDF',  color: '#FF6B6B' },
-  'application/msword':                                  { icon: '📝', label: 'DOC',  color: '#4A90E2' },
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                                                         { icon: '📝', label: 'DOCX', color: '#4A90E2' },
-  'application/vnd.ms-excel':                            { icon: '📊', label: 'XLS',  color: '#27AE60' },
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                                                         { icon: '📊', label: 'XLSX', color: '#27AE60' },
-  'application/vnd.ms-powerpoint':                       { icon: '📋', label: 'PPT',  color: '#E67E22' },
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                                                         { icon: '📋', label: 'PPTX', color: '#E67E22' },
-  'text/plain':                                          { icon: '📃', label: 'TXT',  color: '#95A5A6' },
-  'text/csv':                                            { icon: '📊', label: 'CSV',  color: '#27AE60' },
-  // Images
-  'image/jpeg':  { icon: '🖼️', label: 'JPG',  color: '#3DFFC0' },
-  'image/png':   { icon: '🖼️', label: 'PNG',  color: '#3DFFC0' },
-  'image/gif':   { icon: '🖼️', label: 'GIF',  color: '#3DFFC0' },
-  'image/webp':  { icon: '🖼️', label: 'WEBP', color: '#3DFFC0' },
-  'image/svg+xml': { icon: '🖼️', label: 'SVG', color: '#3DFFC0' },
-  // Archives
-  'application/zip':             { icon: '📦', label: 'ZIP', color: '#9B59B6' },
-  'application/x-rar-compressed':{ icon: '📦', label: 'RAR', color: '#9B59B6' },
-  // Code
-  'application/json':     { icon: '⚙️', label: 'JSON', color: '#F39C12' },
-  'text/javascript':      { icon: '⚙️', label: 'JS',   color: '#F39C12' },
-  'text/html':            { icon: '⚙️', label: 'HTML', color: '#E74C3C' },
-  'text/css':             { icon: '⚙️', label: 'CSS',  color: '#3498DB' },
-};
+/**
+ * fileUtils.js
+ * Helpers for file type detection, metadata, and size formatting.
+ */
 
-export const MAX_FILE_SIZE       = 20 * 1024 * 1024; // 20 MB
-export const MAX_FILES_PER_MSG   = 5;
+/** Maximum attachment size — 10 MB. */
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
-/* ── Get file meta ────────────────────────────────────────────────── */
-export const getFileMeta = (file) => {
-  return ACCEPTED_TYPES[file.type] ?? { icon: '📎', label: 'FILE', color: '#8A94AA' };
-};
+/** Allowed MIME types. */
+export const ALLOWED_MIME = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+  'application/pdf',
+  'text/plain', 'text/csv', 'text/markdown',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/json',
+]);
 
-/* ── Format file size ────────────────────────────────────────────── */
-export const formatFileSize = (bytes) => {
-  if (bytes === 0)           return '0 B';
+const FILE_META_MAP = [
+  { test: (t) => t.startsWith('image/'),          icon: '🖼',  label: 'Image',       color: '#00C8FF' },
+  { test: (t) => t === 'application/pdf',          icon: '📄',  label: 'PDF',         color: '#FF6B9D' },
+  { test: (t) => t.includes('spreadsheet') || t.includes('excel') || t === 'text/csv',
+                                                   icon: '📊',  label: 'Spreadsheet', color: '#00F5A0' },
+  { test: (t) => t.includes('word') || t.includes('document'),
+                                                   icon: '📝',  label: 'Document',    color: '#FFB800' },
+  { test: (t) => t === 'application/json',         icon: '{ }', label: 'JSON',        color: '#A78BFA' },
+  { test: (t) => t.startsWith('text/'),            icon: '📃',  label: 'Text',        color: '#8892A8' },
+];
+
+const DEFAULT_META = { icon: '📎', label: 'File', color: '#8892A8' };
+
+/**
+ * Returns display metadata for a file or file-preview object.
+ * @param {{ type?: string, name?: string }} file
+ * @returns {{ icon: string, label: string, color: string }}
+ */
+export function getFileMeta(file) {
+  const mime = file?.type ?? '';
+  return FILE_META_MAP.find((m) => m.test(mime)) ?? DEFAULT_META;
+}
+
+/**
+ * Formats a byte count to a human-readable string.
+ * @param {number} bytes
+ * @returns {string}
+ */
+export function formatFileSize(bytes) {
+  if (bytes == null || bytes < 0) return '—';
   if (bytes < 1024)          return `${bytes} B`;
   if (bytes < 1024 * 1024)   return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
+}
 
-/* ── Validate a file ─────────────────────────────────────────────── */
-export const validateFile = (file) => {
-  if (file.size > MAX_FILE_SIZE) {
-    return { valid: false, error: `File too large (max ${formatFileSize(MAX_FILE_SIZE)})` };
+/**
+ * Validates a File object. Returns an error string or null.
+ * @param {File} file
+ * @returns {string|null}
+ */
+export function validateFile(file) {
+  if (file.size > MAX_FILE_BYTES) {
+    return `"${file.name}" exceeds the 10 MB limit (${formatFileSize(file.size)}).`;
   }
-  return { valid: true };
-};
-
-/* ── Create a preview object from a File ────────────────────────── */
-export const createFilePreview = (file) => ({
-  id:       `${file.name}-${file.size}-${Date.now()}`,
-  file,
-  name:     file.name,
-  size:     file.size,
-  type:     file.type,
-  meta:     getFileMeta(file),
-  preview:  file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-  sizeStr:  formatFileSize(file.size),
-});
-
-/* ── Revoke preview URLs to avoid memory leaks ───────────────────── */
-export const revokePreview = (filePreview) => {
-  if (filePreview.preview) {
-    URL.revokeObjectURL(filePreview.preview);
+  if (!ALLOWED_MIME.has(file.type)) {
+    return `"${file.name}" is not a supported file type.`;
   }
-};
+  return null;
+}
 
-/* ── Accept string for <input accept="..."> ─────────────────────── */
-export const ACCEPT_STRING = Object.keys(ACCEPTED_TYPES).join(',');
+/**
+ * Builds a preview object from a File.
+ * Image files get a data-URL preview; others get null.
+ * @param {File} file
+ * @returns {Promise<{ id: string, name: string, type: string, size: number, preview: string|null }>}
+ */
+export async function buildFilePreview(file) {
+  const id      = `fp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const isImage = file.type.startsWith('image/');
+
+  if (isImage) {
+    const preview = await new Promise((resolve) => {
+      const reader  = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+    return { id, name: file.name, type: file.type, size: file.size, preview };
+  }
+
+  return { id, name: file.name, type: file.type, size: file.size, preview: null };
+}
