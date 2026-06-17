@@ -1,20 +1,28 @@
 import { useState, useCallback, useRef } from 'react';
 import {
-  createFilePreview,
-  revokePreview,
+  buildFilePreview,   // was: createFilePreview
   validateFile,
-  MAX_FILES_PER_MSG,
 } from '../utils/fileUtils';
+
+/** Max files allowed per message – not exported by fileUtils, so defined here */
+const MAX_FILES_PER_MSG = 5;
 
 /**
  * useFileUpload – manages selected file state, validation,
  * drag-and-drop, and cleanup.
  */
 export function useFileUpload() {
-  const [files, setFiles]         = useState([]); // FilePreview[]
+  const [files, setFiles]           = useState([]); // FilePreview[]
   const [dragActive, setDragActive] = useState(false);
   const [fileErrors, setFileErrors] = useState([]);
   const inputRef = useRef(null);
+
+  /* ── Revoke an object-URL preview (replaces missing revokePreview) ── */
+  const revokePreview = useCallback((filePreview) => {
+    if (filePreview?.previewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(filePreview.previewUrl);
+    }
+  }, []);
 
   /* ── Add files ───────────────────────────────────────────────── */
   const addFiles = useCallback((rawFiles) => {
@@ -31,7 +39,7 @@ export function useFileUpload() {
     setFileErrors(errors);
 
     setFiles((prev) => {
-      const combined = [...prev, ...valid.map(createFilePreview)];
+      const combined = [...prev, ...valid.map(buildFilePreview)]; // was: createFilePreview
       /* Enforce max cap */
       return combined.slice(0, MAX_FILES_PER_MSG);
     });
@@ -44,13 +52,13 @@ export function useFileUpload() {
       if (target) revokePreview(target);
       return prev.filter((f) => f.id !== id);
     });
-  }, []);
+  }, [revokePreview]);
 
   /* ── Clear all files ─────────────────────────────────────────── */
   const clearFiles = useCallback(() => {
     setFiles((prev) => { prev.forEach(revokePreview); return []; });
     setFileErrors([]);
-  }, []);
+  }, [revokePreview]);
 
   /* ── Open the file picker ─────────────────────────────────────── */
   const openPicker = useCallback(() => {
@@ -65,7 +73,6 @@ export function useFileUpload() {
 
   const onDragLeave = useCallback((e) => {
     e.preventDefault(); e.stopPropagation();
-    /* Only deactivate if we're actually leaving the drop zone */
     if (e.currentTarget.contains(e.relatedTarget)) return;
     setDragActive(false);
   }, []);
@@ -83,7 +90,6 @@ export function useFileUpload() {
   /* ── Input change handler ─────────────────────────────────────── */
   const onInputChange = useCallback((e) => {
     if (e.target.files?.length) addFiles(e.target.files);
-    /* Reset so same file can be re-selected */
     e.target.value = '';
   }, [addFiles]);
 
@@ -101,7 +107,7 @@ export function useFileUpload() {
     onDragOver,
     onDrop,
     onInputChange,
-    hasFiles: files.length > 0,
+    hasFiles:   files.length > 0,
     canAddMore: files.length < MAX_FILES_PER_MSG,
   };
 }
