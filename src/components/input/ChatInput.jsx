@@ -1,10 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import FileUpload       from './FileUpload';
-import { useFileUpload } from '../../hooks/useFileUpload';
+import FileUpload        from './FileUpload';
+import { useFileUpload }  from '../../hooks/useFileUpload';
+import { MAX_FILES_PER_MSG } from '../../utils/constants';
+import { PaperclipIcon, SendIcon, SpinnerIcon } from '../icons/Icons';
 
-/* Local helpers replacing missing exports */
 const isEmpty = (text, files) => !text?.trim() && (!files || files.length === 0);
-const MAX_FILES_PER_MSG = 5;
 
 /* ── Inline styles ─────────────────────────────────────────────────── */
 const s = {
@@ -28,8 +28,8 @@ const s = {
   },
 
   barFocused: {
-    borderColor: 'rgba(61,255,192,0.35)',
-    boxShadow:   '0 0 0 3px rgba(61,255,192,0.07)',
+    borderColor: 'rgba(0,245,160,0.35)',
+    boxShadow:   '0 0 0 3px var(--accent-glow)',
   },
 
   textarea: {
@@ -66,11 +66,9 @@ const s = {
     display:     'flex',
     alignItems:  'center',
     justifyContent: 'center',
-    fontSize:     16,
     color:        active ? 'var(--accent)' : 'var(--text-muted)',
     transition:  'all 0.15s ease',
     flexShrink:   0,
-    lineHeight:   1,
   }),
 
   sendBtn: (canSend, isLoading) => ({
@@ -78,18 +76,17 @@ const s = {
     height:           38,
     borderRadius:    'var(--radius-full)',
     background:       canSend && !isLoading
-      ? 'linear-gradient(135deg, var(--accent) 0%, #00B4D8 100%)'
+      ? 'linear-gradient(135deg, var(--accent) 0%, var(--accent-blue) 100%)'
       : 'var(--bg-hover)',
     border:          'none',
     cursor:           canSend && !isLoading ? 'pointer' : 'default',
     display:         'flex',
     alignItems:      'center',
     justifyContent:  'center',
-    fontSize:         16,
     color:            canSend && !isLoading ? '#0A0E1A' : 'var(--text-muted)',
     transition:      'all 0.18s ease',
     flexShrink:       0,
-    boxShadow:        canSend && !isLoading ? 'var(--shadow-accent)' : 'none',
+    boxShadow:        canSend && !isLoading ? '0 4px 16px var(--accent-glow)' : 'none',
     transform:        canSend && !isLoading ? 'scale(1.02)' : 'scale(1)',
   }),
 
@@ -140,7 +137,6 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
     onSend(text, files);
     setText('');
     clearFiles();
-    /* Reset textarea height */
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
   }, [text, files, isLoading, onSend, clearFiles]);
 
@@ -173,7 +169,7 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
       />
 
       {/* Input bar */}
-      <div style={{ ...s.bar, ...(focused ? s.barFocused : {}) }}>
+      <div className="chat-input-bar" style={{ ...s.bar, ...(focused ? s.barFocused : {}) }}>
         <textarea
           ref={textareaRef}
           style={s.textarea}
@@ -191,30 +187,34 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
         <div style={s.actions}>
           {/* Attach file button */}
           <button
+            type="button"
             style={s.iconBtn(hasFiles)}
             onClick={openPicker}
             title={`Attach files (${files.length}/${MAX_FILES_PER_MSG})`}
             aria-label="Attach files"
             disabled={isLoading}
           >
-            📎
+            <PaperclipIcon size={16} />
           </button>
 
           {/* Send button */}
           <button
+            type="button"
             style={s.sendBtn(canSend, isLoading)}
             onClick={handleSend}
             title="Send message (Enter)"
             aria-label="Send message"
             disabled={!canSend}
           >
-            {isLoading ? '⏳' : '➤'}
+            {isLoading
+              ? <SpinnerIcon size={16} className="icon-spin" />
+              : <SendIcon size={16} />}
           </button>
         </div>
       </div>
 
       {/* Hint bar */}
-      <div style={s.hint}>
+      <div style={s.hint} className="chat-input-hint">
         <span>Enter to send · Shift+Enter for new line</span>
         {hasFiles && <span>{files.length}/{MAX_FILES_PER_MSG} file(s)</span>}
       </div>
