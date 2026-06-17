@@ -1,17 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmptyState from '../components/ui/EmptyState';
-import { FilesIcon } from '../components/icons/Icons';
+import { CalendarIcon } from '../components/icons/Icons';
 
-export default function FilesPage() {
+export default function CalendarPage() {
   const navigate = useNavigate();
-
   return (
     <div className="page-container">
       <EmptyState
-        icon={<FilesIcon size={28} />}
-        title="No files yet"
-        description="Files you share with ARIA, or documents ARIA generates during a conversation, will show up here."
+        icon={<CalendarIcon size={28} />}
+        title="No events scheduled"
+        description="Ask ARIA to schedule a meeting or create an event, and it will appear here once calendar sync is connected."
         actionLabel="Go to chat"
         onAction={() => navigate('/')}
       />
