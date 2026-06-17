@@ -1,8 +1,9 @@
 import React from 'react';
 import { ALLOWED_MIME } from '../../utils/fileUtils';
+import { MAX_FILES_PER_MSG, MAX_FILE_SIZE_MB } from '../../utils/constants';
+import { PaperclipIcon, XIcon } from '../icons/Icons';
 
 const ACCEPT_STRING = Object.keys(ALLOWED_MIME).join(',');
-const MAX_FILES_PER_MSG = 10;
 
 /* ── Inline styles ─────────────────────────────────────────────────── */
 const s = {
@@ -13,10 +14,9 @@ const s = {
   dropOverlay: (active) => ({
     position:        'fixed',
     inset:            0,
-    background:      'rgba(61,255,192,0.06)',
+    background:      'rgba(0,245,160,0.06)',
     backdropFilter:  'blur(4px)',
     border:          '2px dashed var(--accent)',
-    borderRadius:     0,
     zIndex:           100,
     display:          active ? 'flex' : 'none',
     alignItems:       'center',
@@ -29,9 +29,12 @@ const s = {
 
   dropLabel: {
     fontFamily: 'var(--font-display)',
-    fontSize:    28,
+    fontSize:    24,
     fontWeight:  700,
     color:       'var(--accent)',
+    display:     'flex',
+    alignItems:  'center',
+    gap:          10,
   },
 
   dropSub: {
@@ -85,9 +88,8 @@ const s = {
     border:      'none',
     cursor:      'pointer',
     color:       'var(--text-muted)',
-    fontSize:     14,
     lineHeight:   1,
-    padding:      '0 0 0 4px',
+    padding:      3,
     display:      'flex',
     alignItems:   'center',
     borderRadius: '50%',
@@ -128,6 +130,7 @@ function FileChip({ fp, onRemove }) {
       <span style={s.chipName}>{fp.name}</span>
       <span style={s.chipSize}>{fp.sizeStr}</span>
       <button
+        type="button"
         style={s.removeBtn}
         onClick={() => onRemove(fp.id)}
         title="Remove file"
@@ -135,7 +138,7 @@ function FileChip({ fp, onRemove }) {
         onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--error)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
       >
-        ✕
+        <XIcon size={13} />
       </button>
     </div>
   );
@@ -172,9 +175,12 @@ export default function FileUpload({
         onDrop={onDrop}
         onDragOver={(e) => e.preventDefault()}
       >
-        <div style={s.dropLabel}>📎 Drop files here</div>
+        <div style={s.dropLabel}>
+          <PaperclipIcon size={22} />
+          Drop files here
+        </div>
         <div style={s.dropSub}>
-          Up to {MAX_FILES_PER_MSG} files · 20 MB each
+          Up to {MAX_FILES_PER_MSG} files · {MAX_FILE_SIZE_MB} MB each
         </div>
       </div>
 
