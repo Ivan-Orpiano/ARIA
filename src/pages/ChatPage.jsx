@@ -9,7 +9,7 @@ export default function ChatPage() {
 
   const handleSuggestionSelect = useCallback((text) => {
     setPrefill(text);
-    setTimeout(() => setPrefill(''), 100); // reset after the input picks it up
+    setTimeout(() => setPrefill(''), 100);
   }, []);
 
   const handleSend = useCallback((text, files) => {
