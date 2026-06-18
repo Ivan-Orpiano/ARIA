@@ -30,4 +30,4 @@ yarn-error.log*
 /include
 
 #Supabase Secrets
-.supabase-db.ts
+supabase-db.ts
