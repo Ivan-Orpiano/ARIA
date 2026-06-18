@@ -23,9 +23,11 @@ yarn-debug.log*
 yarn-error.log*
 
 
-
 #Python | OpenAI| LangChain
 .pyenv.cfg
 .env
 /scripts
 /include
+
+#Supabase Secrets
+.supabase-db.ts
