@@ -24,10 +24,10 @@ yarn-error.log*
 
 
 #Python | OpenAI| LangChain
-.pyenv.cfg
+.pyvenv.cfg
 .env
 /scripts
 /include
 
 #Supabase Secrets
-supabase-db.ts
+supabase/
