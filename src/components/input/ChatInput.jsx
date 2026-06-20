@@ -6,13 +6,17 @@ import { PaperclipIcon, SendIcon, SpinnerIcon } from '../icons/Icons';
 
 const isEmpty = (text, files) => !text?.trim() && (!files || files.length === 0);
 
-/* ── Inline styles ─────────────────────────────────────────────────── */
+/* ── Inline styles ──────────────────────────────────────────────────── */
 const s = {
   outer: {
-    background:  'var(--bg-surface)',
+    background:  'var(--bg-glass)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
     borderTop:   '1px solid var(--border-subtle)',
     padding:     '0 0 16px',
     flexShrink:   0,
+    position:    'relative',
+    zIndex:       5,
   },
 
   bar: {
@@ -20,7 +24,9 @@ const s = {
     alignItems:   'flex-end',
     gap:           10,
     margin:       '12px 16px 0',
-    background:   'var(--bg-elevated)',
+    background:   'rgba(17,24,40,0.82)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
     border:       '1px solid var(--border-mid)',
     borderRadius: 'var(--radius-xl)',
     padding:      '10px 12px 10px 16px',
@@ -28,83 +34,104 @@ const s = {
   },
 
   barFocused: {
-    borderColor: 'rgba(0,245,160,0.35)',
-    boxShadow:   '0 0 0 3px var(--accent-glow)',
+    borderColor: 'rgba(0,245,160,0.32)',
+    boxShadow:   '0 0 0 3px rgba(0,245,160,0.10), 0 4px 24px rgba(0,0,0,0.30)',
   },
 
   textarea: {
-    flex:             1,
-    background:       'none',
-    border:           'none',
-    outline:          'none',
-    resize:           'none',
-    color:            'var(--text-primary)',
-    fontFamily:       'var(--font-body)',
-    fontSize:          14.5,
-    lineHeight:        1.6,
-    padding:           0,
-    minHeight:         22,
-    maxHeight:         160,
-    overflowY:        'auto',
-    caretColor:       'var(--accent)',
+    flex:        1,
+    background:  'none',
+    border:      'none',
+    outline:     'none',
+    resize:      'none',
+    color:       'var(--text-primary)',
+    fontFamily:  'var(--font-body)',
+    fontSize:     14.5,
+    lineHeight:   1.6,
+    padding:      0,
+    minHeight:    22,
+    maxHeight:    160,
+    overflowY:   'auto',
+    caretColor:  'var(--accent)',
   },
 
   actions: {
-    display:      'flex',
-    alignItems:   'flex-end',
-    gap:           6,
-    paddingBottom: 2,
+    display:       'flex',
+    alignItems:    'flex-end',
+    gap:            6,
+    paddingBottom:  2,
   },
 
   iconBtn: (active) => ({
-    width:       36,
-    height:       36,
-    borderRadius: 'var(--radius-full)',
-    background:   active ? 'var(--accent-dim)' : 'none',
-    border:       active ? '1px solid var(--accent)' : '1px solid transparent',
-    cursor:      'pointer',
-    display:     'flex',
-    alignItems:  'center',
-    justifyContent: 'center',
-    color:        active ? 'var(--accent)' : 'var(--text-muted)',
-    transition:  'all 0.15s ease',
-    flexShrink:   0,
+    width:          36,
+    height:         36,
+    borderRadius:  'var(--radius-full)',
+    background:     active ? 'var(--accent-dim)' : 'rgba(255,255,255,0.04)',
+    border:         active ? '1px solid rgba(0,245,160,0.30)' : '1px solid var(--border-mid)',
+    cursor:        'pointer',
+    display:       'flex',
+    alignItems:    'center',
+    justifyContent:'center',
+    color:          active ? 'var(--accent)' : 'var(--text-muted)',
+    transition:    'all 0.15s ease',
+    flexShrink:     0,
+    position:      'relative',
   }),
 
   sendBtn: (canSend, isLoading) => ({
-    width:           38,
-    height:           38,
-    borderRadius:    'var(--radius-full)',
-    background:       canSend && !isLoading
-      ? 'linear-gradient(135deg, var(--accent) 0%, var(--accent-blue) 100%)'
-      : 'var(--bg-hover)',
-    border:          'none',
-    cursor:           canSend && !isLoading ? 'pointer' : 'default',
-    display:         'flex',
-    alignItems:      'center',
-    justifyContent:  'center',
-    color:            canSend && !isLoading ? '#0A0E1A' : 'var(--text-muted)',
-    transition:      'all 0.18s ease',
-    flexShrink:       0,
-    boxShadow:        canSend && !isLoading ? '0 4px 16px var(--accent-glow)' : 'none',
-    transform:        canSend && !isLoading ? 'scale(1.02)' : 'scale(1)',
+    width:           40,
+    height:          40,
+    borderRadius:   'var(--radius-full)',
+    background:      canSend && !isLoading
+      ? 'var(--gradient-send)'
+      : 'rgba(255,255,255,0.04)',
+    border:         'none',
+    cursor:          canSend && !isLoading ? 'pointer' : 'default',
+    display:        'flex',
+    alignItems:     'center',
+    justifyContent: 'center',
+    color:           canSend && !isLoading ? '#05080F' : 'var(--text-muted)',
+    transition:     'all 0.18s ease',
+    flexShrink:      0,
+    boxShadow:       canSend && !isLoading ? '0 4px 20px var(--accent-glow)' : 'none',
+    transform:       canSend && !isLoading ? 'scale(1.02)' : 'scale(1)',
   }),
 
   hint: {
-    fontSize:  11,
-    color:     'var(--text-muted)',
-    fontFamily:'var(--font-body)',
-    padding:   '6px 20px 0',
-    display:   'flex',
-    justifyContent: 'space-between',
+    fontSize:      10.5,
+    color:         'var(--text-hint)',
+    fontFamily:   'var(--font-body)',
+    padding:      '6px 20px 0',
+    display:      'flex',
+    justifyContent:'space-between',
+    letterSpacing: '0.01em',
+  },
+
+  fileBadge: {
+    position:        'absolute',
+    top:             -4,
+    right:           -4,
+    width:            16,
+    height:           16,
+    borderRadius:    '50%',
+    background:      'var(--accent)',
+    color:           '#05080F',
+    fontSize:         9,
+    fontWeight:       700,
+    display:         'flex',
+    alignItems:      'center',
+    justifyContent:  'center',
+    fontFamily:      'var(--font-mono)',
+    border:          '1.5px solid var(--bg-elevated)',
+    lineHeight:       1,
   },
 };
 
-/* ── ChatInput ─────────────────────────────────────────────────────── */
+/* ── ChatInput ──────────────────────────────────────────────────────── */
 export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
-  const [text, setText]         = useState('');
-  const [focused, setFocused]   = useState(false);
-  const textareaRef             = useRef(null);
+  const [text, setText]       = useState('');
+  const [focused, setFocused] = useState(false);
+  const textareaRef           = useRef(null);
 
   const {
     files, fileErrors, dragActive,
@@ -195,6 +222,11 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
             disabled={isLoading}
           >
             <PaperclipIcon size={16} />
+            {hasFiles && (
+              <span style={s.fileBadge} aria-hidden="true">
+                {files.length}
+              </span>
+            )}
           </button>
 
           {/* Send button */}
@@ -205,6 +237,12 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
             title="Send message (Enter)"
             aria-label="Send message"
             disabled={!canSend}
+            onMouseDown={(e) => {
+              if (canSend && !isLoading) e.currentTarget.style.transform = 'scale(0.92)';
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = canSend && !isLoading ? 'scale(1.02)' : 'scale(1)';
+            }}
           >
             {isLoading
               ? <SpinnerIcon size={16} className="icon-spin" />

@@ -1,6 +1,6 @@
 import React from 'react';
 
-/* ── Suggestion list ──────────────────────────────────────── */
+/* ── Suggestion list ─────────────────────────────────────────────────── */
 const SUGGESTIONS = [
   { icon: '📅', label: 'Schedule a meeting',   text: 'Schedule a meeting for tomorrow at 2 PM and draft the calendar invite.' },
   { icon: '✉️', label: 'Draft an email',        text: 'Draft a professional follow-up email to a client after a product demo.' },
@@ -10,89 +10,149 @@ const SUGGESTIONS = [
   { icon: '📝', label: 'Write a report',        text: 'Write a concise executive summary report on Q3 performance highlights.' },
 ];
 
-const CAPABILITIES = [
-  'File Attachments',
-  'n8n Automation',
-  'Real-time Responses',
-  'Conversation History',
+const FEATURES = [
+  { icon: '📎', label: 'File Attachments' },
+  { icon: '⚡', label: 'n8n Automation' },
+  { icon: '💬', label: 'Real-time Chat' },
+  { icon: '🔒', label: 'Private & Secure' },
 ];
 
-/* ── Orbit logo (animated) ───────────────────────────────── */
-function OrbitLogo() {
-  const particles = [
-    { anim: 'orb1 4.2s linear infinite',  size: 8, color: '#00F5A0', glow: 'rgba(0,245,160,0.9)'  },
-    { anim: 'orb2 6.5s linear infinite',  size: 6, color: '#00C8FF', glow: 'rgba(0,200,255,0.9)'  },
-    { anim: 'orb3 9.0s linear infinite',  size: 5, color: '#FF6B9D', glow: 'rgba(255,107,157,0.9)' },
-  ];
-
+/* ── Animated logo ───────────────────────────────────────────────────── */
+function LogoMark() {
   return (
     <div
       role="img"
       aria-label="ARIA logo"
-      style={{ position: 'relative', width: 100, height: 100, flexShrink: 0 }}
+      style={{ position: 'relative', width: 96, height: 96, flexShrink: 0 }}
     >
-      {/* Outer dashed ring */}
+      {/* Outer rotating conic ring */}
       <div style={{
-        position: 'absolute', inset: -6,
+        position: 'absolute',
+        inset: 0,
         borderRadius: '50%',
-        border: '1px dashed rgba(0,200,255,0.10)',
+        border: '1.5px solid transparent',
+        backgroundImage: 'linear-gradient(#050810, #050810), conic-gradient(from 0deg, #00F5A0, #00C8FF, #A855F7, #00F5A0)',
+        backgroundOrigin: 'border-box',
+        backgroundClip: 'padding-box, border-box',
+        animation: 'ringRotate 8s linear infinite',
+        opacity: 0.75,
       }} />
 
-      {/* Inner ring */}
+      {/* Middle counter-rotating dashed ring */}
       <div style={{
-        position: 'absolute', inset: 8,
+        position: 'absolute',
+        inset: 10,
         borderRadius: '50%',
-        border: '1px solid rgba(0,245,160,0.12)',
+        border: '1px dashed rgba(0,200,255,0.25)',
+        animation: 'ringRotateRev 12s linear infinite',
+      }} />
+
+      {/* Inner slow ring */}
+      <div style={{
+        position: 'absolute',
+        inset: 20,
+        borderRadius: '50%',
+        border: '1px solid rgba(0,245,160,0.18)',
+        animation: 'ringRotate 6s linear infinite',
+      }} />
+
+      {/* Glow halo */}
+      <div style={{
+        position: 'absolute',
+        inset: 24,
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(0,245,160,0.28) 0%, rgba(0,200,255,0.12) 50%, transparent 80%)',
+        animation: 'glow 3s ease-in-out infinite',
       }} />
 
       {/* Core */}
       <div style={{
-        position:       'absolute',
-        inset:          0,
-        borderRadius:   '50%',
-        background:     'linear-gradient(135deg, #00F5A0 0%, #00C8FF 100%)',
-        display:        'flex',
-        alignItems:     'center',
+        position: 'absolute',
+        inset: 26,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #00F5A0 0%, #00C8FF 55%, #A855F7 100%)',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        fontSize:       32,
-        animation:      'glow 3s ease-in-out infinite',
-        boxShadow:      '0 0 40px rgba(0,245,160,0.25)',
-        color:          '#060A14',
-        userSelect:     'none',
+        fontSize: 22,
+        color: '#05080F',
+        fontWeight: 800,
+        fontFamily: "'Syne', sans-serif",
+        userSelect: 'none',
+        letterSpacing: '-0.04em',
+        boxShadow: '0 0 32px rgba(0,245,160,0.35), inset 0 1px 0 rgba(255,255,255,0.20)',
       }}>
-        ✦
+        A
       </div>
-
-      {/* Orbiting particles */}
-      {particles.map((p, i) => (
-        <div
-          key={i}
-          aria-hidden="true"
-          style={{
-            position:  'absolute',
-            top:       '50%',
-            left:      '50%',
-            marginTop: -p.size / 2,
-            marginLeft:-p.size / 2,
-            animation: p.anim,
-          }}
-        >
-          <div style={{
-            width:        p.size,
-            height:       p.size,
-            borderRadius: '50%',
-            background:   p.color,
-            position:     'absolute',
-            transform:    'translate(-50%, -50%)',
-            boxShadow:    `0 0 ${p.size * 2}px ${p.glow}`,
-          }} />
-        </div>
-      ))}
     </div>
   );
 }
 
-/* ── WelcomeScreen ──────────────────────────────────────── */
+/* ── Suggestion card ─────────────────────────────────────────────────── */
+function SuggestionCard({ suggestion: s, delay, onClick }) {
+  const [hovered, setHovered] = React.useState(false);
+
+  return (
+    <button
+      role="listitem"
+      onClick={onClick}
+      aria-label={`Use prompt: ${s.text}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background:   hovered ? 'var(--accent-dim)' : 'var(--bg-elevated)',
+        border:       `1px solid ${hovered ? 'rgba(0,245,160,0.28)' : 'var(--border-mid)'}`,
+        borderRadius: 'var(--radius-md)',
+        padding:      '11px 14px',
+        cursor:       'pointer',
+        textAlign:    'left',
+        display:      'flex',
+        gap:           11,
+        alignItems:   'flex-start',
+        fontFamily:   'var(--font-body)',
+        transition:   'all var(--transition-base)',
+        animation:    `popIn 0.42s ease ${delay}s both`,
+        opacity:       0,
+        transform:    hovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow:    hovered ? '0 4px 20px var(--accent-glow)' : 'none',
+      }}
+    >
+      <span style={{
+        fontSize:   18,
+        flexShrink:  0,
+        marginTop:   1,
+        filter:      hovered ? 'none' : 'saturate(0.75)',
+        transition: 'filter var(--transition-base)',
+      }}>
+        {s.icon}
+      </span>
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          fontSize:   13,
+          fontWeight:  600,
+          color:       hovered ? 'var(--accent)' : 'var(--text-primary)',
+          marginBottom: 2,
+          transition: 'color var(--transition-base)',
+          lineHeight:  1.3,
+        }}>
+          {s.label}
+        </div>
+        <div style={{
+          fontSize:     11.5,
+          color:        'var(--text-muted)',
+          lineHeight:   1.45,
+          overflow:     'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace:   'nowrap',
+        }}>
+          {s.text}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/* ── WelcomeScreen ───────────────────────────────────────────────────── */
 export default function WelcomeScreen({ onSelectSuggestion }) {
   return (
     <div
@@ -102,79 +162,109 @@ export default function WelcomeScreen({ onSelectSuggestion }) {
         flexDirection:  'column',
         alignItems:     'center',
         justifyContent: 'center',
-        padding:        '40px 24px 32px',
-        gap:            32,
+        padding:        '32px 24px 28px',
+        gap:             36,
         textAlign:      'center',
-        animation:      'fadeIn 0.40s ease-out both',
+        animation:      'fadeIn 0.45s ease-out both',
       }}
     >
-      {/* Logo + headline */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
-        <OrbitLogo />
+      {/* Hero */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+        <LogoMark />
 
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           <h1 style={{
-            fontSize:      28,
-            fontWeight:    800,
-            color:         'var(--text-primary)',
-            margin:        0,
-            letterSpacing: '-0.04em',
-            fontFamily:    'var(--font-display)',
+            fontSize:            42,
+            fontWeight:          800,
+            margin:               0,
+            letterSpacing:       '-0.05em',
+            fontFamily:          "'Syne', sans-serif",
+            background:          'linear-gradient(135deg, #00F5A0 0%, #00C8FF 45%, #A855F7 100%)',
+            WebkitBackgroundClip:'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip:      'text',
+            backgroundSize:      '200% auto',
+            animation:           'shimmerText 4s linear infinite',
+            lineHeight:           1.1,
           }}>
             ARIA
           </h1>
+
           <p style={{
-            fontSize:   13.5,
+            fontSize:   14.5,
             color:      'var(--text-secondary)',
-            marginTop:  8,
-            maxWidth:   340,
-            lineHeight: 1.65,
+            margin:      0,
+            maxWidth:    360,
+            lineHeight:  1.65,
           }}>
             Your intelligent AI Secretary — draft emails, research topics,
             schedule tasks, and automate your workflows.
           </p>
         </div>
 
-        {/* Status pills */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {/* Status pill bar */}
+        <div
+          style={{
+            display:      'flex',
+            alignItems:   'center',
+            background:   'var(--bg-elevated)',
+            border:       '1px solid var(--border-mid)',
+            borderRadius: 'var(--radius-full)',
+            padding:      '4px 6px',
+            animation:    'popIn 0.4s ease 0.2s both',
+            opacity:       0,
+          }}
+        >
           {[
-            { glyph: '✦', label: 'Online',  color: 'var(--accent)' },
-            { glyph: '⚡', label: 'Fast',    color: 'var(--accent-blue)' },
-            { glyph: '🔒', label: 'Private', color: 'var(--text-secondary)' },
-          ].map(({ glyph, label, color }, i) => (
-            <div
-              key={label}
-              style={{
-                display:      'flex',
-                alignItems:   'center',
-                gap:          4,
-                fontSize:     10.5,
-                color:        'var(--text-muted)',
-                background:   'var(--bg-elevated)',
-                border:       '1px solid var(--border-mid)',
-                borderRadius: 'var(--radius-full)',
-                padding:      '3px 10px',
-                fontFamily:   'var(--font-mono)',
-                animation:    `popIn 0.4s ease ${0.1 + i * 0.08}s both`,
-              }}
-            >
-              <span style={{ color, fontSize: 9 }}>{glyph}</span>
-              {label}
-            </div>
+            { color: 'var(--accent)',      label: 'Online',  pulse: true },
+            { color: 'var(--accent-blue)', label: 'Fast',    pulse: false },
+            { color: '#A855F7',            label: 'Private', pulse: false },
+          ].map(({ color, label, pulse }, i) => (
+            <React.Fragment key={label}>
+              {i > 0 && (
+                <span style={{
+                  width:      1,
+                  height:     12,
+                  background: 'var(--border-mid)',
+                  margin:     '0 2px',
+                  display:    'inline-block',
+                }} />
+              )}
+              <span style={{
+                display:    'flex',
+                alignItems: 'center',
+                gap:         5,
+                padding:    '2px 10px',
+                fontSize:    11,
+                color:      'var(--text-secondary)',
+                fontFamily: 'var(--font-mono)',
+              }}>
+                <span style={{
+                  width:        6,
+                  height:       6,
+                  borderRadius: '50%',
+                  background:   color,
+                  flexShrink:   0,
+                  boxShadow:    `0 0 6px ${color}`,
+                  animation:    pulse ? 'pulse 2s ease-in-out infinite' : undefined,
+                }} />
+                {label}
+              </span>
+            </React.Fragment>
           ))}
         </div>
       </div>
 
-      {/* Suggestion chips */}
-      <div style={{ width: '100%', maxWidth: 580 }}>
+      {/* Suggestion grid */}
+      <div style={{ width: '100%', maxWidth: 600 }}>
         <p style={{
           fontSize:      10,
-          fontWeight:    600,
-          color:         'var(--text-muted)',
+          fontWeight:    700,
+          color:         'var(--text-hint)',
           fontFamily:    'var(--font-display)',
           textTransform: 'uppercase',
-          letterSpacing: '0.10em',
-          marginBottom:  10,
+          letterSpacing: '0.12em',
+          marginBottom:   12,
         }}>
           Try asking
         </p>
@@ -184,79 +274,53 @@ export default function WelcomeScreen({ onSelectSuggestion }) {
           aria-label="Suggested prompts"
           style={{
             display:             'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap:                 7,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap:                  8,
           }}
         >
           {SUGGESTIONS.map((s, i) => (
-            <button
+            <SuggestionCard
               key={s.label}
-              role="listitem"
+              suggestion={s}
+              delay={0.08 + i * 0.055}
               onClick={() => onSelectSuggestion(s.text)}
-              aria-label={`Use prompt: ${s.text}`}
-              style={{
-                background:   'var(--bg-elevated)',
-                border:       '1px solid var(--border-mid)',
-                borderRadius: 'var(--radius-md)',
-                padding:      '10px 13px',
-                cursor:       'pointer',
-                textAlign:    'left',
-                display:      'flex',
-                gap:          9,
-                alignItems:   'flex-start',
-                fontSize:     12.5,
-                color:        'var(--text-secondary)',
-                lineHeight:   1.45,
-                fontFamily:   'var(--font-body)',
-                transition:   'all var(--transition-base)',
-                animation:    `popIn 0.4s ease ${0.08 + i * 0.06}s both`,
-                opacity:      0,
-              }}
-              onMouseEnter={(e) => {
-                Object.assign(e.currentTarget.style, {
-                  borderColor: 'var(--accent)',
-                  background:  'var(--accent-dim)',
-                  color:       'var(--text-primary)',
-                  transform:   'translateY(-2px)',
-                  boxShadow:   '0 4px 14px var(--accent-glow)',
-                });
-              }}
-              onMouseLeave={(e) => {
-                Object.assign(e.currentTarget.style, {
-                  borderColor: 'var(--border-mid)',
-                  background:  'var(--bg-elevated)',
-                  color:       'var(--text-secondary)',
-                  transform:   'translateY(0)',
-                  boxShadow:   'none',
-                });
-              }}
-            >
-              <span aria-hidden="true" style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
-                {s.icon}
-              </span>
-              <span>{s.label}</span>
-            </button>
+            />
           ))}
         </div>
       </div>
 
-      {/* Capability tags */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
-        {CAPABILITIES.map((tag) => (
-          <span
-            key={tag}
-            style={{
-              fontSize:     10.5,
-              color:        'var(--text-muted)',
-              background:   'var(--bg-surface)',
-              border:       '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-full)',
-              padding:      '3px 10px',
-              fontFamily:   'var(--font-mono)',
-            }}
-          >
-            {tag}
-          </span>
+      {/* Feature row */}
+      <div style={{
+        display:        'flex',
+        alignItems:     'center',
+        flexWrap:       'wrap',
+        justifyContent: 'center',
+        animation:      'popIn 0.4s ease 0.55s both',
+        opacity:         0,
+      }}>
+        {FEATURES.map((f, i) => (
+          <React.Fragment key={f.label}>
+            {i > 0 && (
+              <span style={{
+                width:      1,
+                height:     14,
+                background: 'var(--border-mid)',
+                margin:     '0 2px',
+              }} />
+            )}
+            <span style={{
+              display:    'flex',
+              alignItems: 'center',
+              gap:         5,
+              padding:    '4px 12px',
+              fontSize:    11.5,
+              color:      'var(--text-muted)',
+              fontFamily: 'var(--font-body)',
+            }}>
+              <span style={{ fontSize: 12 }}>{f.icon}</span>
+              {f.label}
+            </span>
+          </React.Fragment>
         ))}
       </div>
     </div>

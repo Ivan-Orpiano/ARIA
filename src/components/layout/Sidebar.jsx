@@ -20,8 +20,8 @@ const NAV_ITEMS = [
 
 /**
  * @param {{
- *   open:          boolean,   // desktop collapsed/expanded state
- *   mobileOpen:    boolean,   // mobile drawer state
+ *   open:          boolean,
+ *   mobileOpen:    boolean,
  *   onCloseMobile: () => void,
  * }} props
  */
@@ -36,7 +36,7 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
     <aside className={className} aria-label="Primary navigation">
       <div className="sidebar-header">
         <div className="sidebar-logo" aria-hidden="true">
-          <SparkleIcon size={17} />
+          <SparkleIcon size={16} />
         </div>
         <div className="sidebar-title-group">
           <div className="sidebar-title">ARIA</div>
@@ -62,7 +62,7 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
             onClick={onCloseMobile}
             className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
           >
-            <Icon size={17} />
+            <Icon size={18} />
             <span>{label}</span>
           </NavLink>
         ))}
