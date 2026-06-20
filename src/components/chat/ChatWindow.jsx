@@ -12,3 +12,26 @@ function Aurora() {
     { top: '10%',    right: '10%',  w: 320, h: 320, color: 'rgba(168,85,247,0.06)', dur: '18s', delay: '-8s',   dir: 'reverse' },
     { bottom: '20%', left: '5%',    w: 280, h: 280, color: 'rgba(0,245,160,0.05)',  dur: '22s', delay: '-4s',   dir: '' },
   ];
+
+  return (
+    <div className="aurora" aria-hidden="true">
+      {orbs.map((o, i) => (
+        <div
+          key={i}
+          className="aurora-orb"
+          style={{
+            width:  o.w,
+            height: o.h,
+            top:    o.top,    left:   o.left,
+            bottom: o.bottom, right:  o.right,
+            background: `radial-gradient(circle, ${o.color} 0%, transparent 70%)`,
+            filter:     'blur(80px)',
+            animation:  `aurora ${o.dur} ease-in-out infinite ${o.dir}`,
+            animationDelay: o.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
