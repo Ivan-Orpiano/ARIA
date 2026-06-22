@@ -35,7 +35,11 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
   return (
     <aside className={className} aria-label="Primary navigation">
       <div className="sidebar-header">
-        <div className="sidebar-logo" aria-hidden="true">
+        <div
+          className="sidebar-logo"
+          aria-hidden="true"
+          style={{ boxShadow: '0 0 0 1.5px rgba(0,245,160,0.25), 0 0 22px rgba(0,245,160,0.22)' }}
+        >
           <SparkleIcon size={16} />
         </div>
         <div className="sidebar-title-group">
@@ -62,7 +66,7 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
             onClick={onCloseMobile}
             className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
           >
-            <Icon size={18} />
+            <Icon size={17} />
             <span>{label}</span>
           </NavLink>
         ))}

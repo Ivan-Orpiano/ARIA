@@ -6,36 +6,36 @@ import { PaperclipIcon, SendIcon, SpinnerIcon } from '../icons/Icons';
 
 const isEmpty = (text, files) => !text?.trim() && (!files || files.length === 0);
 
-/* ── Inline styles ──────────────────────────────────────────────────── */
+/* ── Inline styles ─────────────────────────────────────────────────── */
 const s = {
   outer: {
-    background:  'var(--bg-glass)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    borderTop:   '1px solid var(--border-subtle)',
-    padding:     '0 0 16px',
-    flexShrink:   0,
-    position:    'relative',
-    zIndex:       5,
+    background:           'var(--bg-glass)',
+    backdropFilter:       'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    borderTop:            '1px solid var(--border-subtle)',
+    padding:              '0 0 16px',
+    flexShrink:            0,
+    position:             'relative',
+    zIndex:                5,
   },
 
   bar: {
-    display:      'flex',
-    alignItems:   'flex-end',
-    gap:           10,
-    margin:       '12px 16px 0',
-    background:   'rgba(17,24,40,0.82)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    border:       '1px solid var(--border-mid)',
-    borderRadius: 'var(--radius-xl)',
-    padding:      '10px 12px 10px 16px',
-    transition:   'border-color 0.2s ease, box-shadow 0.2s ease',
+    display:              'flex',
+    alignItems:           'flex-end',
+    gap:                   10,
+    margin:               '12px 16px 0',
+    background:           'rgba(10,16,36,0.88)',
+    backdropFilter:       'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border:               '1px solid var(--border-mid)',
+    borderRadius:         'var(--radius-xl)',
+    padding:              '10px 12px 10px 18px',
+    transition:           'border-color 0.22s ease, box-shadow 0.22s ease',
   },
 
   barFocused: {
-    borderColor: 'rgba(0,245,160,0.32)',
-    boxShadow:   '0 0 0 3px rgba(0,245,160,0.10), 0 4px 24px rgba(0,0,0,0.30)',
+    borderColor: 'rgba(0,245,160,0.35)',
+    boxShadow:   '0 0 0 3px rgba(0,245,160,0.08), 0 6px 28px rgba(0,0,0,0.35)',
   },
 
   textarea: {
@@ -65,69 +65,71 @@ const s = {
   iconBtn: (active) => ({
     width:          36,
     height:         36,
-    borderRadius:  'var(--radius-full)',
-    background:     active ? 'var(--accent-dim)' : 'rgba(255,255,255,0.04)',
-    border:         active ? '1px solid rgba(0,245,160,0.30)' : '1px solid var(--border-mid)',
-    cursor:        'pointer',
-    display:       'flex',
-    alignItems:    'center',
-    justifyContent:'center',
-    color:          active ? 'var(--accent)' : 'var(--text-muted)',
-    transition:    'all 0.15s ease',
-    flexShrink:     0,
-    position:      'relative',
+    borderRadius:   'var(--radius-full)',
+    background:      active ? 'var(--accent-dim)' : 'rgba(255,255,255,0.04)',
+    border:          active ? '1px solid rgba(0,245,160,0.30)' : '1px solid var(--border-mid)',
+    cursor:         'pointer',
+    display:        'flex',
+    alignItems:     'center',
+    justifyContent: 'center',
+    color:           active ? 'var(--accent)' : 'var(--text-muted)',
+    transition:     'all 0.16s ease',
+    flexShrink:      0,
+    position:       'relative',
   }),
 
   sendBtn: (canSend, isLoading) => ({
     width:           40,
     height:          40,
-    borderRadius:   'var(--radius-full)',
-    background:      canSend && !isLoading
+    borderRadius:    'var(--radius-full)',
+    background:       canSend && !isLoading
       ? 'var(--gradient-send)'
       : 'rgba(255,255,255,0.04)',
-    border:         'none',
-    cursor:          canSend && !isLoading ? 'pointer' : 'default',
-    display:        'flex',
-    alignItems:     'center',
-    justifyContent: 'center',
-    color:           canSend && !isLoading ? '#05080F' : 'var(--text-muted)',
-    transition:     'all 0.18s ease',
-    flexShrink:      0,
-    boxShadow:       canSend && !isLoading ? '0 4px 20px var(--accent-glow)' : 'none',
-    transform:       canSend && !isLoading ? 'scale(1.02)' : 'scale(1)',
-  }),
-
-  hint: {
-    fontSize:      10.5,
-    color:         'var(--text-hint)',
-    fontFamily:   'var(--font-body)',
-    padding:      '6px 20px 0',
-    display:      'flex',
-    justifyContent:'space-between',
-    letterSpacing: '0.01em',
-  },
-
-  fileBadge: {
-    position:        'absolute',
-    top:             -4,
-    right:           -4,
-    width:            16,
-    height:           16,
-    borderRadius:    '50%',
-    background:      'var(--accent)',
-    color:           '#05080F',
-    fontSize:         9,
-    fontWeight:       700,
+    border:          'none',
+    cursor:           canSend && !isLoading ? 'pointer' : 'default',
     display:         'flex',
     alignItems:      'center',
     justifyContent:  'center',
-    fontFamily:      'var(--font-mono)',
-    border:          '1.5px solid var(--bg-elevated)',
-    lineHeight:       1,
+    color:            canSend && !isLoading ? '#04060F' : 'var(--text-muted)',
+    transition:      'all 0.18s ease',
+    flexShrink:       0,
+    boxShadow:        canSend && !isLoading
+      ? '0 4px 22px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.20)'
+      : 'none',
+    transform:        canSend && !isLoading ? 'scale(1.04)' : 'scale(1)',
+  }),
+
+  hint: {
+    fontSize:       10.5,
+    color:          'var(--text-hint)',
+    fontFamily:     'var(--font-body)',
+    padding:        '6px 22px 0',
+    display:        'flex',
+    justifyContent: 'space-between',
+    letterSpacing:  '0.01em',
+  },
+
+  fileBadge: {
+    position:       'absolute',
+    top:            -4,
+    right:          -4,
+    width:           16,
+    height:          16,
+    borderRadius:   '50%',
+    background:     'var(--accent)',
+    color:          '#04060F',
+    fontSize:        9,
+    fontWeight:      700,
+    display:        'flex',
+    alignItems:     'center',
+    justifyContent: 'center',
+    fontFamily:     'var(--font-mono)',
+    border:         '1.5px solid var(--bg-elevated)',
+    lineHeight:      1,
   },
 };
 
-/* ── ChatInput ──────────────────────────────────────────────────────── */
+/* ── ChatInput ─────────────────────────────────────────────────────── */
 export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
   const [text, setText]       = useState('');
   const [focused, setFocused] = useState(false);
@@ -241,7 +243,7 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
               if (canSend && !isLoading) e.currentTarget.style.transform = 'scale(0.92)';
             }}
             onMouseUp={(e) => {
-              e.currentTarget.style.transform = canSend && !isLoading ? 'scale(1.02)' : 'scale(1)';
+              e.currentTarget.style.transform = canSend && !isLoading ? 'scale(1.04)' : 'scale(1)';
             }}
           >
             {isLoading

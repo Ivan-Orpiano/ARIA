@@ -23,6 +23,9 @@ yarn-debug.log*
 yarn-error.log*
 
 
+.package-lock.json
+.package.json
+
 #Python | OpenAI| LangChain
 .pyvenv.cfg
 .env
