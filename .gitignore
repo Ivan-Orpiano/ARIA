@@ -27,10 +27,11 @@ yarn-error.log*
 .package.json
 
 #Python | OpenAI| LangChain
-.pyvenv.cfg
+backend/venv/.pyvenv.cfg
 .env
 /scripts
 /include
 
 #Supabase Secrets
 supabase/
+
