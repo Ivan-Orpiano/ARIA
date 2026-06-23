@@ -27,7 +27,8 @@ yarn-error.log*
 .package.json
 
 #Python | OpenAI| LangChain
-backend/venv/.pyvenv.cfg
+# Ignore Python virtual environment
+backend/venv/
 .env
 /scripts
 /include
