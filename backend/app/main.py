@@ -15,10 +15,10 @@ logging.basicConfig(level=logging.INFO)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient() as http_client:
         app.state.settings = settings
         app.state.http_client = http_client
-        app.state.n8n_client = N8nClient(settings, https_client)
+        app.state.n8n_client = N8NClient(settings, http_client)
         yield
         # AsyncClient will be closed automatically when exiting the context manager
         
@@ -27,3 +27,19 @@ def create_app() -> FastAPI:
     app = FastAPI(title = "AI Secretary Backend", version = "1.0.0", lifespan=lifespan)
 
 
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
+    
+    app.include_router(email.router)
+    
+    @app.get("/health", tags=["meta"])
+    async def health():
+        return {"status": "ok", "env": settings.app_env}
+    
+    return app
+app = create_app()
