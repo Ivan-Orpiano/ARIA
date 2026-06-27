@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
+import { triggerEmail, isValidEmail } from '../services/emailService';
 import { generateMessageId } from '../utils/messageUtils';
 
 /* ── Context ────────────────────────────────────────────── */
@@ -125,7 +126,27 @@ export function ChatProvider({ children }) {
       setIsLoading(false);
       abortRef.current = null;
     }
+
+    const EMAIL_RE = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+    // inside sendMessage, after the user message is appended:
+    const match = trimmed.match(EMAIL_RE);
+    if (match && isValidEmail(match[0])) {
+      try {
+        await triggerEmail({
+          recipient: match[0],
+          message: trimmed,
+          workflow: 'daily_tasks',   // or chosen dynamically by your agent
+          sessionId,
+        });
+      } catch (e) {
+        setError(`Email trigger failed: ${e.message}`);
+      }
+    }
   }, [messages]);
+
+
+
 
   /** Cancel an in-flight request. */
   const cancelRequest = useCallback(() => {
