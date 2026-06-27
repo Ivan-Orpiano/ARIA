@@ -1,0 +1,351 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Parse the AI Agent's JSON output into subject + body.\n// Also preserve the PDF binary from the Download PDF File node\n// so it can be attached by the Gmail node.\n\nconst aiOutput = $input.item.json.output || '';\n\nlet subject = 'Please find the attached document';\nlet body = aiOutput;\n\ntry {\n  // Strip potential markdown code fences\n  const cleaned = aiOutput.replace(/```json|```/g, '').trim();\n  // Extract the first JSON object found\n  const jsonMatch = cleaned.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    const parsed = JSON.parse(jsonMatch[0]);\n    if (parsed.subject) subject = parsed.subject;\n    if (parsed.body) body = parsed.body;\n  }\n} catch (e) {\n  // Fall back to raw AI output as the body\n  console.log('JSON parse failed, using raw output:', e.message);\n}\n\nconst to = $('Email Extraction1').item.json.extractedEmail;\n\n// Preserve the binary (pdfAttachment) from the Download PDF File node\nreturn [{\n  json: {\n    to,\n    subject,\n    body\n  },\n  binary: $input.item.binary\n}];"
+      },
+      "id": "ecdc807e-377e-4191-9723-942ac6e7a5ad",
+      "name": "Parse AI Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4688,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Parse AI Output').item.json.to }}",
+        "subject": "={{ $('Parse AI Output').item.json.subject }}",
+        "emailType": "text",
+        "message": "={{ $('Parse AI Output').item.json.body }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "=pdfAttachment"
+              }
+            ]
+          },
+          "ccList": "ivanritchelorpiano@gmail.com, rachelbabayson@gmail.com, salesdarwinbalabala123@gmail.com"
+        }
+      },
+      "id": "abca0eab-678d-49a8-a411-18870740ece0",
+      "name": "Send Email via Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        5104,
+        1296
+      ],
+      "webhookId": "3a17f362-8a43-447b-ba5d-a4fafb124a38"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract message data, PDF info, and caption/text\nconst message = $input.item.json.message;\nconst hasDocument = message.document ? true : false;\nlet hasValidPDF = false;\nlet fileId = '';\nlet fileName = '';\nlet chatId = message.chat ? message.chat.id : null;\nlet caption = message.caption || '';\nlet text = message.text || '';\nlet combinedText = caption || text;\n\nif (hasDocument && message.document.mime_type === 'application/pdf') {\n  hasValidPDF = true;\n  fileId = message.document.file_id;\n  fileName = message.document.file_name || 'document.pdf';\n}\n\nreturn {\n  hasValidPDF,\n  fileId,\n  fileName,\n  chatId,\n  combinedText,\n  originalMessage: message\n};"
+      },
+      "id": "9706f66f-d48f-43aa-a707-144bf334e926",
+      "name": "Extract Message1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.combinedText }}",
+              "operation": "contains",
+              "value2": "@gmail.com"
+            }
+          ]
+        }
+      },
+      "id": "bbdad92d-da4b-48fa-9d9d-483d62f83611",
+      "name": "Check PDF Present1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3664,
+        1360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract email from combinedText using regex\nconst combinedText = $input.item.json.combinedText || '';\nconst emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/;\nconst match = combinedText.match(emailRegex);\nlet extractedEmail = match ? match[0] : null;\n\nreturn {\n  extractedEmail,\n  fileId: $input.item.json.fileId,\n  fileName: $input.item.json.fileName,\n  chatId: $input.item.json.chatId,\n  combinedText\n};"
+      },
+      "id": "419feea4-3b36-4502-802a-8d3f06428c45",
+      "name": "Email Extraction1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3888,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.fileId }}",
+        "additionalFields": {
+          "mimeType": "=pdf"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4096,
+        1296
+      ],
+      "id": "350b113d-b2d7-4c18-8117-0bfd8c8e0e1b",
+      "name": "Get a file1",
+      "webhookId": "cc72af9a-df32-4d4b-acb0-1195885cb8d2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional email writer. Your task is to compose a formal and professional email to accompany an attached PDF document.\n\nContext from the sender: Winchel Construction\nAttached file name: {{ $('Email Extraction1').item.json.fileName }}\n\nInstructions:\n- Write a polished, professional email body suitable for a business context.\n- The tone should be formal but approachable.\n- Reference the attached document naturally in the body.\n- Keep it concise (3–4 short paragraphs).\n- Just use \"Dear Client,\" and do not use \"Dear [Recipient Name]\",\nRespond ONLY with a valid JSON object. No markdown, no backticks, no preamble. Use this exact structure:\n{\n  \"subject\": \"a concise and relevant email subject line\",\n  \"body\": \"the full professional email body as plain text with newlines using \\\\n\"\n}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        4320,
+        1296
+      ],
+      "id": "80f51017-3c0f-4328-b434-6c3783173d3b",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        4256,
+        1600
+      ],
+      "id": "e2a1c33d-4283-4d79-9240-1e8a81320601",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3888,
+        1440
+      ],
+      "id": "2aaa9a83-b5a7-463c-9070-19a53f31fada",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/file/bot8825765501:AAF4sBWlVKmuRQnBp5ImnfyYyJUaYHEziIk/{{ $('Get a file1').item.json.result.file_path }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "pdfAttachment"
+            }
+          }
+        }
+      },
+      "id": "3a5ab58e-3ccf-4148-9837-a89c5958b5cd",
+      "name": "Download PDF File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4896,
+        1296
+      ],
+      "notes": "Downloads the actual PDF binary from Telegram servers. Requires TELEGRAM_BOT_TOKEN set as a workflow variable in n8n Settings > Variables."
+    },
+    {
+      "parameters": {
+        "path": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        2992,
+        1360
+      ],
+      "id": "9bc2d1df-40c5-4f07-a60d-a6b4d7691617",
+      "name": "Webhook",
+      "webhookId": "ee6d0ecc-5038-4a7a-9966-33a99c027aac"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "99fa9b44-0b42-41ff-8995-d2c2f46ee810",
+              "name": "userText",
+              "value": "hello",
+              "type": "string"
+            },
+            {
+              "id": "aa61e686-01d1-43d2-a37d-c4a38dbdaa5e",
+              "name": "userFile",
+              "value": "=file",
+              "type": "string"
+            },
+            {
+              "id": "25884dbb-fe51-4741-9b03-93b166f7120d",
+              "name": "dateWhen",
+              "value": "1",
+              "type": "string"
+            },
+            {
+              "id": "aad7f5c6-b938-443f-92fb-686cbc10ef2c",
+              "name": "User",
+              "value": "Ivban",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3248,
+        1360
+      ],
+      "id": "4f31b549-3b50-49e6-ac94-f9b343a692c6",
+      "name": "Edit Fields"
+    }
+  ],
+  "connections": {
+    "Parse AI Output": {
+      "main": [
+        [
+          {
+            "node": "Download PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message1": {
+      "main": [
+        [
+          {
+            "node": "Check PDF Present1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check PDF Present1": {
+      "main": [
+        [
+          {
+            "node": "Email Extraction1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Extraction1": {
+      "main": [
+        [
+          {
+            "node": "Get a file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF File": {
+      "main": [
+        [
+          {
+            "node": "Send Email via Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Extract Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c26257b13a0e22568f007525bbf7bafa363787d41bceb694d12814fed9771c6"
+  }
+}
