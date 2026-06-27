@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
-from fast.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 
 from app.core.config import get_settings
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     async with httpx.AsyncClient() as http_client:
         app.state.settings = settings
         app.state.http_client = http_client
-        app.state.n8n_client = N8NClient(settings, http_client)
+        app.state.n8n_client = N8nClient(settings, http_client)
         yield
         # AsyncClient will be closed automatically when exiting the context manager
         
@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
+        allow_origins=settings.cors_origins_list(),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],

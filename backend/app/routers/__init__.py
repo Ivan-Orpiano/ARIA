@@ -1,1 +1,3 @@
-# FastAPI routers — populated when individual router modules are complete.
+from app.routers import email
+
+__all__ = ["email"]
