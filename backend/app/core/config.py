@@ -14,10 +14,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+
+
     # ── n8n webhook ───────────────────────────────────────────────
   
     n8n_webhook_base_url: str = Field(
-        default="https://pianoaivan.app.n8n.cloud/webhook-test/",
+        default="https://pianoaivan.app.n8n.cloud/webhook-test/aria-message",
         description="Base URL all n8n webhook paths are appended to.",
     )
 
