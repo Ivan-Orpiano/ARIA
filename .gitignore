@@ -33,6 +33,8 @@ backend/venv/
 /scripts
 /include
 
+.requirements.txt
+
 #Supabase Secrets
 supabase/
 
