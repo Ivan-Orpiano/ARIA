@@ -59,7 +59,7 @@ export default function Header({ onToggleSidebar }) {
             fontFamily: 'var(--font-mono)',
             letterSpacing: '0.01em',
           }}>
-            claude-sonnet
+            
           </span>
         </div>
       </div>

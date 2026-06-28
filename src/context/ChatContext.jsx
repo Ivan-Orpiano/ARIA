@@ -120,4 +120,4 @@ export function useChatContext() {
     throw new Error('useChatContext must be called inside <ChatProvider>.');
   }
   return ctx;
-}src/components
+}
