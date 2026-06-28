@@ -2,9 +2,9 @@ import React from 'react';
 import Avatar from '../ui/Avatar';
 
 const DOTS = [
-  { color: '#00F5A0', delay: '0s'    },
-  { color: '#00D4FF', delay: '0.18s' },
-  { color: '#B46EF8', delay: '0.36s' },
+  { delay: '0s'    },
+  { delay: '0.18s' },
+  { delay: '0.36s' },
 ];
 
 export default function TypingIndicator() {
@@ -14,31 +14,29 @@ export default function TypingIndicator() {
       aria-label="ARIA is thinking"
       aria-live="polite"
       style={{
-        display: 'flex', gap: 11, alignItems: 'flex-end',
-        padding: '2px 0 18px',
+        display: 'flex', gap: 12, alignItems: 'flex-end',
+        padding: '2px 0 22px',
         animation: 'fadeSlideIn 0.24s ease-out both',
       }}
     >
       <Avatar role="assistant" size={32} />
 
       <div style={{
-        background: 'rgba(7,12,30,0.84)',
-        backdropFilter: 'blur(18px)',
-        WebkitBackdropFilter: 'blur(18px)',
-        border: '1px solid rgba(255,255,255,0.082)',
-        borderRadius: '5px 18px 18px 18px',
-        padding: '13px 18px',
-        display: 'flex', gap: 6, alignItems: 'center',
-        boxShadow: '0 2px 20px rgba(0,0,0,0.45)',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '6px 16px 16px 16px',
+        padding: '14px 18px',
+        display: 'flex', gap: 7, alignItems: 'center',
+        boxShadow: 'var(--shadow-sm)',
         position: 'relative',
       }}>
-        {/* Left accent bar */}
+        {/* Left accent rule */}
         <div style={{
           position: 'absolute', left: 0,
-          top: '14%', height: '72%', width: 2,
-          borderRadius: '0 2px 2px 0',
-          background: 'linear-gradient(180deg, var(--accent) 0%, var(--accent-blue) 100%)',
-          opacity: 0.42,
+          top: '16%', height: '68%', width: 3,
+          borderRadius: '0 var(--radius-full) var(--radius-full) 0',
+          background: 'var(--accent)',
+          opacity: 0.9,
         }} />
 
         {DOTS.map((d, i) => (
@@ -46,19 +44,18 @@ export default function TypingIndicator() {
             key={i}
             aria-hidden="true"
             style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: d.color, display: 'inline-block',
-              boxShadow: `0 0 9px ${d.color}AA`,
-              animation: `dotPop 1.55s ease-in-out ${d.delay} infinite`,
+              width: 7, height: 7, borderRadius: '50%',
+              background: 'var(--accent)', display: 'inline-block',
+              animation: `dotPop 1.4s ease-in-out ${d.delay} infinite`,
               flexShrink: 0,
             }}
           />
         ))}
 
         <span style={{
-          fontSize: 11, color: 'var(--text-muted)',
-          fontFamily: 'var(--font-mono)', marginLeft: 4,
-          letterSpacing: '0.03em',
+          fontSize: 12, color: 'var(--text-muted)',
+          fontFamily: 'var(--font-body)', marginLeft: 4,
+          letterSpacing: '0.01em',
         }}>
           thinking…
         </span>

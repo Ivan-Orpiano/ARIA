@@ -2,6 +2,9 @@ import React, { useState, useCallback } from 'react';
 import Avatar         from '../ui/Avatar';
 import { formatTime } from '../../utils/messageUtils';
 import { getFileMeta, formatFileSize } from '../../utils/fileUtils';
+import {
+  CopyIcon, CheckIcon, CheckCheckIcon, FileTextIcon, AlertTriangleIcon,
+} from '../icons/Icons';
 
 /* ── Markdown-lite renderer ─────────────────────────────────────── */
 function FormattedText({ text }) {
@@ -17,7 +20,7 @@ function FormattedText({ text }) {
 
         const applyCode = (raw) =>
           raw.replace(/`([^`]+)`/g,
-            '<code style="background:rgba(0,245,160,0.07);border:1px solid rgba(0,245,160,0.18);border-radius:4px;padding:1px 6px;font-family:var(--font-mono);font-size:11.5px;color:var(--accent);letter-spacing:-0.01em">$1</code>'
+            '<code style="background:var(--accent-dim);border:1px solid var(--border-accent);border-radius:6px;padding:1px 6px;font-family:var(--font-mono);font-size:12px;color:var(--accent-strong)">$1</code>'
           );
 
         const render = (raw) => applyCode(applyBold(raw));
@@ -26,9 +29,9 @@ function FormattedText({ text }) {
           return (
             <div key={i} style={{ display: 'flex', gap: 10, marginTop: 2 }}>
               <span style={{
-                color: 'var(--accent)', flexShrink: 0, marginTop: 4,
-                fontSize: 8, opacity: 0.8,
-              }}>◆</span>
+                width: 5, height: 5, borderRadius: '50%',
+                background: 'var(--accent)', flexShrink: 0, marginTop: 8,
+              }} />
               <span
                 style={{ lineHeight: 1.65 }}
                 dangerouslySetInnerHTML={{ __html: render(line.replace(/^[•\-*]\s/, '')) }}
@@ -43,8 +46,7 @@ function FormattedText({ text }) {
             <div key={i} style={{ display: 'flex', gap: 10, marginTop: 2 }}>
               <span style={{
                 color: 'var(--accent)', flexShrink: 0,
-                fontFamily: 'var(--font-mono)', fontSize: 11, marginTop: 2,
-                opacity: 0.85,
+                fontWeight: 600, fontSize: 13, marginTop: 1,
               }}>
                 {num}.
               </span>
@@ -76,8 +78,8 @@ function FileChip({ fp }) {
         alt={fp.name}
         style={{
           width: 108, height: 72, objectFit: 'cover',
-          borderRadius: 9, border: '1px solid var(--border-mid)',
-          display: 'block', boxShadow: '0 2px 10px rgba(0,0,0,0.40)',
+          borderRadius: 10, border: '1px solid var(--border-mid)',
+          display: 'block', boxShadow: 'var(--shadow-sm)',
         }}
       />
     );
@@ -85,20 +87,27 @@ function FileChip({ fp }) {
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8,
-      padding: '6px 12px',
-      background: `${meta.color}0C`,
-      border: `1px solid ${meta.color}20`,
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '8px 12px',
+      background: 'var(--chip-bg)',
+      border: '1px solid var(--chip-border)',
       borderRadius: 10,
     }}>
-      <span style={{ fontSize: 15, lineHeight: 1 }}>{meta.icon}</span>
+      <span style={{
+        width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+        color: 'var(--accent)',
+      }}>
+        <FileTextIcon size={15} />
+      </span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         <span style={{
-          fontSize: 11.5, fontWeight: 500, color: 'var(--text-primary)',
+          fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)',
           maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis',
           whiteSpace: 'nowrap', fontFamily: 'var(--font-body)',
         }}>{fp.name}</span>
-        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
           {meta.label} · {formatFileSize(fp.size)}
         </span>
       </div>
@@ -109,10 +118,18 @@ function FileChip({ fp }) {
 /* ── Status icon ──────────────────────────────────────────────── */
 function StatusIcon({ status }) {
   if (status === 'sending') {
-    return <span style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: 1 }}>···</span>;
+    return (
+      <span style={{ color: 'rgba(255,255,255,0.6)', display: 'inline-flex' }}>
+        <CheckIcon size={13} strokeWidth={2.2} />
+      </span>
+    );
   }
   if (status === 'sent') {
-    return <span style={{ fontSize: 10, color: 'var(--accent)', opacity: 0.75 }}>✓✓</span>;
+    return (
+      <span style={{ color: 'rgba(255,255,255,0.85)', display: 'inline-flex' }}>
+        <CheckCheckIcon size={14} strokeWidth={2.2} />
+      </span>
+    );
   }
   return null;
 }
@@ -138,9 +155,8 @@ export default function MessageBubble({ message }) {
     <div
       aria-label={`${isUser ? 'You' : 'ARIA'} at ${time}: ${message.content}`}
       style={{
-        marginBottom: 20,
-        animation: 'springUp 0.40s cubic-bezier(0.34,1.56,0.64,1) both',
-        willChange: 'transform, opacity',
+        marginBottom: 24,
+        animation: 'fadeSlideIn 0.24s ease both',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -149,7 +165,7 @@ export default function MessageBubble({ message }) {
         display: 'flex',
         flexDirection: isUser ? 'row-reverse' : 'row',
         alignItems: 'flex-end',
-        gap: 11,
+        gap: 12,
       }}>
         <Avatar role={isUser ? 'user' : 'assistant'} size={32} />
 
@@ -162,27 +178,27 @@ export default function MessageBubble({ message }) {
               aria-label="Copy message"
               style={{
                 position: 'absolute',
-                top: -30,
+                top: -32,
                 [isUser ? 'right' : 'left']: 0,
-                display: 'flex', alignItems: 'center', gap: 4,
-                background: 'var(--bg-elevated)',
-                border: `1px solid ${copied ? 'rgba(0,245,160,0.38)' : 'var(--border-mid)'}`,
+                display: 'flex', alignItems: 'center', gap: 5,
+                background: 'var(--bg-surface)',
+                border: `1px solid ${copied ? 'var(--border-accent)' : 'var(--border-mid)'}`,
                 borderRadius: 'var(--radius-full)',
                 cursor: 'pointer',
                 color: copied ? 'var(--accent)' : 'var(--text-secondary)',
-                fontSize: 10, padding: '3px 10px',
-                fontFamily: 'var(--font-mono)',
-                transition: 'all 0.15s ease',
+                fontSize: 11, fontWeight: 500, padding: '4px 11px',
+                fontFamily: 'var(--font-body)',
+                transition: 'all 0.18s ease',
                 whiteSpace: 'nowrap',
                 opacity: hovered ? 1 : 0,
                 pointerEvents: hovered ? 'auto' : 'none',
                 transform: hovered ? 'translateY(0)' : 'translateY(4px)',
-                boxShadow: copied
-                  ? '0 0 12px rgba(0,245,160,0.18)'
-                  : 'var(--shadow-sm)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
-              {copied ? '✓ Copied' : '⎘ Copy'}
+              {copied
+                ? <><CheckIcon size={12} strokeWidth={2.2} /> Copied</>
+                : <><CopyIcon size={12} /> Copy</>}
             </button>
           )}
 
@@ -190,41 +206,49 @@ export default function MessageBubble({ message }) {
           <div style={{
             padding: isUser ? '12px 16px' : '14px 18px',
             borderRadius: isUser
-              ? '18px 5px 18px 18px'
-              : '5px 18px 18px 18px',
+              ? '16px 6px 16px 16px'
+              : '6px 16px 16px 16px',
             background: isError
-              ? 'rgba(255, 77, 106, 0.07)'
+              ? 'var(--error-bg)'
               : isUser
-                ? 'linear-gradient(135deg, rgba(255,107,157,0.11) 0%, rgba(200,80,130,0.06) 100%)'
-                : 'rgba(7,12,30,0.84)',
-            backdropFilter: (!isUser && !isError) ? 'blur(18px)' : undefined,
-            WebkitBackdropFilter: (!isUser && !isError) ? 'blur(18px)' : undefined,
+                ? 'var(--accent)'
+                : 'var(--bg-surface)',
             border: isError
-              ? '1px solid rgba(255,77,106,0.28)'
+              ? '1px solid var(--error-border)'
               : isUser
-                ? '1px solid rgba(255,107,157,0.18)'
-                : '1px solid rgba(255,255,255,0.084)',
+                ? 'none'
+                : '1px solid var(--border-subtle)',
             boxShadow: isUser
               ? 'var(--shadow-user)'
               : isError
-                ? '0 2px 12px rgba(255,77,106,0.14)'
-                : '0 2px 20px rgba(0,0,0,0.45)',
+                ? 'none'
+                : 'var(--shadow-sm)',
             fontSize: 14, lineHeight: 1.65,
-            color: 'var(--text-primary)',
+            color: isUser ? '#FFFFFF' : 'var(--text-primary)',
             fontFamily: 'var(--font-body)',
             position: 'relative',
-            transition: 'box-shadow 0.20s ease',
+            transition: 'box-shadow 0.18s ease',
           }}>
 
-            {/* AI left accent bar */}
+            {/* AI left accent rule */}
             {!isUser && !isError && (
               <div style={{
                 position: 'absolute', left: 0,
-                top: '14%', height: '72%', width: 2,
-                borderRadius: '0 2px 2px 0',
-                background: 'linear-gradient(180deg, var(--accent) 0%, var(--accent-blue) 100%)',
-                opacity: 0.42,
+                top: '16%', height: '68%', width: 3,
+                borderRadius: '0 var(--radius-full) var(--radius-full) 0',
+                background: 'var(--accent)',
+                opacity: 0.9,
               }} />
+            )}
+
+            {/* Error icon */}
+            {isError && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                color: 'var(--error)', marginBottom: 4, fontWeight: 600,
+              }}>
+                <AlertTriangleIcon size={15} />
+              </div>
             )}
 
             {/* Content */}
@@ -248,9 +272,11 @@ export default function MessageBubble({ message }) {
             {/* File attachments */}
             {message.files?.length > 0 && (
               <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: 7,
-                marginTop: 10, paddingTop: 10,
-                borderTop: '1px solid rgba(255,255,255,0.04)',
+                display: 'flex', flexWrap: 'wrap', gap: 8,
+                marginTop: 12, paddingTop: 12,
+                borderTop: isUser
+                  ? '1px solid rgba(255,255,255,0.18)'
+                  : '1px solid var(--border-subtle)',
               }}>
                 {message.files.map((fp) => (
                   <FileChip key={fp.id} fp={fp} />
@@ -260,14 +286,17 @@ export default function MessageBubble({ message }) {
 
             {/* Timestamp + status */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              marginTop: 8, paddingTop: 7,
-              borderTop: '1px solid rgba(255,255,255,0.035)',
+              display: 'flex', alignItems: 'center', gap: 6,
+              marginTop: 8, paddingTop: 8,
+              borderTop: isUser
+                ? '1px solid rgba(255,255,255,0.16)'
+                : '1px solid var(--border-subtle)',
               justifyContent: isUser ? 'flex-end' : 'flex-start',
             }}>
               <span style={{
-                fontSize: 10, color: 'var(--text-hint)',
-                fontFamily: 'var(--font-mono)', letterSpacing: '0.03em',
+                fontSize: 11,
+                color: isUser ? 'rgba(255,255,255,0.72)' : 'var(--text-hint)',
+                fontFamily: 'var(--font-body)', letterSpacing: '0.01em',
               }}>
                 {time}
               </span>
