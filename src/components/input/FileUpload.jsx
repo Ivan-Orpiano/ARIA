@@ -1,7 +1,7 @@
 import React from 'react';
 import { ALLOWED_MIME } from '../../utils/fileUtils';
 import { MAX_FILES_PER_MSG, MAX_FILE_SIZE_MB } from '../../utils/constants';
-import { PaperclipIcon, XIcon } from '../icons/Icons';
+import { PaperclipIcon, XIcon, FileTextIcon, AlertTriangleIcon } from '../icons/Icons';
 
 const ACCEPT_STRING = Object.keys(ALLOWED_MIME).join(',');
 
@@ -14,8 +14,9 @@ const s = {
   dropOverlay: (active) => ({
     position:        'fixed',
     inset:            0,
-    background:      'rgba(0,245,160,0.06)',
+    background:      'rgba(79, 70, 229, 0.06)',
     backdropFilter:  'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)',
     border:          '2px dashed var(--accent)',
     zIndex:           100,
     display:          active ? 'flex' : 'none',
@@ -29,8 +30,8 @@ const s = {
 
   dropLabel: {
     fontFamily: 'var(--font-display)',
-    fontSize:    24,
-    fontWeight:  700,
+    fontSize:    22,
+    fontWeight:  600,
     color:       'var(--accent)',
     display:     'flex',
     alignItems:  'center',
@@ -48,25 +49,30 @@ const s = {
     display:    'flex',
     flexWrap:   'wrap',
     gap:         8,
-    padding:    '10px 16px 0',
+    padding:    '12px 24px 0',
   },
 
-  chip: (meta) => ({
+  chip: {
     display:        'flex',
     alignItems:     'center',
-    gap:             6,
+    gap:             8,
     padding:        '6px 10px 6px 8px',
-    background:     `${meta.color}18`,
-    border:         `1px solid ${meta.color}35`,
-    borderRadius:    20,
+    background:     'var(--chip-bg)',
+    border:         '1px solid var(--chip-border)',
+    borderRadius:    'var(--radius-full)',
     maxWidth:        180,
     position:       'relative',
-  }),
+  },
 
-  chipIcon: { fontSize: 16, lineHeight: 1 },
+  chipIconWrap: {
+    width: 24, height: 24, borderRadius: 'var(--radius-xs)',
+    background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--accent)', flexShrink: 0,
+  },
 
   chipName: {
-    fontSize:     12,
+    fontSize:     12.5,
     fontWeight:   500,
     color:        'var(--text-primary)',
     fontFamily:   'var(--font-body)',
@@ -77,7 +83,7 @@ const s = {
   },
 
   chipSize: {
-    fontSize:   10,
+    fontSize:   11,
     color:      'var(--text-muted)',
     fontFamily: 'var(--font-body)',
     flexShrink: 0,
@@ -93,39 +99,42 @@ const s = {
     display:      'flex',
     alignItems:   'center',
     borderRadius: '50%',
-    transition:   'color 0.15s',
+    transition:   'color 0.15s ease',
     flexShrink:   0,
   },
 
   imageThumb: {
-    width:        32,
-    height:       32,
+    width:        28,
+    height:       28,
     objectFit:   'cover',
-    borderRadius:  6,
+    borderRadius:  'var(--radius-xs)',
     flexShrink:    0,
   },
 
   errorArea: {
-    padding:    '6px 16px',
+    padding:    '8px 24px',
     display:    'flex',
     flexDirection: 'column',
-    gap:          3,
+    gap:          4,
   },
 
   errorMsg: {
-    fontSize:   11.5,
+    fontSize:   12.5,
     color:      'var(--error)',
     fontFamily: 'var(--font-body)',
+    display:    'flex',
+    alignItems: 'center',
+    gap:         6,
   },
 };
 
 /* ── Single file chip ────────────────────────────────────────────── */
 function FileChip({ fp, onRemove }) {
   return (
-    <div style={s.chip(fp.meta)} title={fp.name}>
+    <div style={s.chip} title={fp.name}>
       {fp.preview
         ? <img src={fp.preview} alt={fp.name} style={s.imageThumb} />
-        : <span style={s.chipIcon}>{fp.meta.icon}</span>
+        : <span style={s.chipIconWrap}><FileTextIcon size={13} /></span>
       }
       <span style={s.chipName}>{fp.name}</span>
       <span style={s.chipSize}>{fp.sizeStr}</span>
@@ -176,7 +185,7 @@ export default function FileUpload({
         onDragOver={(e) => e.preventDefault()}
       >
         <div style={s.dropLabel}>
-          <PaperclipIcon size={22} />
+          <PaperclipIcon size={20} />
           Drop files here
         </div>
         <div style={s.dropSub}>
@@ -197,7 +206,7 @@ export default function FileUpload({
       {fileErrors.length > 0 && (
         <div style={s.errorArea}>
           {fileErrors.map((e, i) => (
-            <p key={i} style={s.errorMsg}>⚠ {e}</p>
+            <p key={i} style={s.errorMsg}><AlertTriangleIcon size={13} /> {e}</p>
           ))}
         </div>
       )}

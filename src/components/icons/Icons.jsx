@@ -131,3 +131,117 @@ export function SpinnerIcon(props) {
     </IconBase>
   );
 }
+
+/* ── Added icons — replace former emoji glyphs ─────────────────────── */
+
+export function FileTextIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="14" y2="17" />
+    </IconBase>
+  );
+}
+
+export function SearchIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </IconBase>
+  );
+}
+
+export function ListChecksIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 6l2 2 3-3" />
+      <path d="M3 14l2 2 3-3" />
+      <line x1="12" y1="5" x2="21" y2="5" />
+      <line x1="12" y1="13" x2="21" y2="13" />
+      <line x1="12" y1="20" x2="21" y2="20" />
+    </IconBase>
+  );
+}
+
+export function BarChartIcon(props) {
+  return (
+    <IconBase {...props}>
+      <line x1="6" y1="20" x2="6" y2="12" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="18" y1="20" x2="18" y2="14" />
+    </IconBase>
+  );
+}
+
+export function ZapIcon(props) {
+  return (
+    <IconBase {...props}>
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </IconBase>
+  );
+}
+
+export function MessageSquareIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </IconBase>
+  );
+}
+
+export function LockIcon(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </IconBase>
+  );
+}
+
+export function CopyIcon(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </IconBase>
+  );
+}
+
+export function CheckIcon(props) {
+  return (
+    <IconBase {...props}>
+      <polyline points="20 6 9 17 4 12" />
+    </IconBase>
+  );
+}
+
+export function CheckCheckIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M2 12l5 5L17 7" />
+      <path d="M12 16l1 1 9-9" />
+    </IconBase>
+  );
+}
+
+export function ArrowRightIcon(props) {
+  return (
+    <IconBase {...props}>
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </IconBase>
+  );
+}
+
+export function AlertTriangleIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </IconBase>
+  );
+}

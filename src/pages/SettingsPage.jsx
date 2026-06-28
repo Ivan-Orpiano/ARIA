@@ -39,14 +39,14 @@ export default function SettingsPage() {
         }}>
           <h1 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 22, fontWeight: 800,
-            letterSpacing: '-0.03em',
+            fontSize: 24, fontWeight: 600,
+            letterSpacing: '-0.02em',
             color: 'var(--text-primary)',
-            marginBottom: 4,
+            marginBottom: 6,
           }}>
             Preferences
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.5 }}>
             Manage how ARIA looks and behaves.
           </p>
         </div>
@@ -60,7 +60,7 @@ export default function SettingsPage() {
           >
             {/* Group header */}
             <div className="settings-panel-header">
-              <SettingsIcon size={17} />
+              <SettingsIcon size={18} />
               <h2>{group.label}</h2>
             </div>
 
@@ -81,10 +81,10 @@ export default function SettingsPage() {
 
         {/* Session notice */}
         <p className="settings-hint" style={{
-          fontSize: 11.5, color: 'var(--text-muted)',
+          fontSize: 13, color: 'var(--text-muted)',
           lineHeight: 1.65,
-          padding: '11px 14px',
-          background: 'rgba(255,255,255,0.018)',
+          padding: '12px 16px',
+          background: 'var(--bg-subtle)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-md)',
           animation: 'fadeInUp 0.36s ease 0.12s both',
@@ -95,3 +95,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

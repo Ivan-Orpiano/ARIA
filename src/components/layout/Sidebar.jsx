@@ -35,9 +35,8 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
         <div
           className="sidebar-logo"
           aria-hidden="true"
-          style={{ boxShadow: '0 0 0 1.5px rgba(0,245,160,0.22), 0 0 22px rgba(0,245,160,0.20)' }}
         >
-          <SparkleIcon size={16} />
+          <SparkleIcon size={18} />
         </div>
 
         <div className="sidebar-title-group">
@@ -51,7 +50,7 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
           onClick={onCloseMobile}
           aria-label="Close navigation"
         >
-          <XIcon size={16} />
+          <XIcon size={18} />
         </button>
       </div>
 
@@ -71,38 +70,19 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               width: 22, height: 22, flexShrink: 0,
               opacity: 0,
-              animation: `slideInLeft 0.32s ease ${0.05 + idx * 0.042}s both`,
+              animation: `slideInLeft 0.3s ease ${0.05 + idx * 0.042}s both`,
             }}>
-              <Icon size={17} />
+              <Icon size={18} />
             </span>
             <span style={{
               opacity: 0,
-              animation: `slideInLeft 0.32s ease ${0.07 + idx * 0.042}s both`,
+              animation: `slideInLeft 0.3s ease ${0.07 + idx * 0.042}s both`,
             }}>
               {label}
             </span>
           </NavLink>
         ))}
       </nav>
-
-      {/* ── Footer ─────────────────────────────── */}
-      <div className="sidebar-footer">
-        <div className="sidebar-pill">
-          <span className="sidebar-pill-dot" aria-hidden="true" />
-          Webhook active
-        </div>
-
-        <div className="sidebar-webhook-info">
-          <div style={{
-            color: 'var(--text-muted)', fontSize: 9,
-            textTransform: 'uppercase', letterSpacing: '0.10em',
-            marginBottom: 4,
-          }}>
-            n8n · GET endpoint
-          </div>
-          fee2e2ba-a3c1-4d…
-        </div>
-      </div>
     </aside>
   );
 }

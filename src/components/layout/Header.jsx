@@ -17,48 +17,49 @@ export default function Header({ onToggleSidebar }) {
           onClick={onToggleSidebar}
           aria-label="Toggle navigation"
         >
-          <MenuIcon size={16} />
+          <MenuIcon size={18} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Logo icon */}
           <div
             aria-hidden="true"
             style={{
-              width: 26, height: 26, borderRadius: 7,
+              width: 30, height: 30, borderRadius: 'var(--radius-sm)',
               background: 'var(--gradient-brand)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#05080F', flexShrink: 0,
-              boxShadow: '0 0 14px var(--accent-glow)',
+              color: '#FFFFFF', flexShrink: 0,
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <SparkleIcon size={13} />
+            <SparkleIcon size={15} />
           </div>
 
           {/* Brand text */}
           <span className="app-header-title">ARIA</span>
           <span style={{
-            fontSize: 10.5, color: 'var(--text-muted)',
-            fontFamily: 'var(--font-body)', letterSpacing: '0.03em',
-            marginLeft: -2,
+            fontSize: 12, color: 'var(--text-muted)',
+            fontFamily: 'var(--font-body)', letterSpacing: '0.01em',
+            fontWeight: 500,
           }}>
             AI Secretary
           </span>
 
           {/* Separator */}
           <span style={{
-            width: 1, height: 14,
+            width: 1, height: 16,
             background: 'var(--border-mid)',
             display: 'inline-block', flexShrink: 0,
+            margin: '0 2px',
           }} />
 
           {/* Model badge */}
           <span style={{
-            fontSize: 10, color: 'var(--text-hint)',
+            fontSize: 11, color: 'var(--text-hint)',
             fontFamily: 'var(--font-mono)',
-            letterSpacing: '0.02em',
+            letterSpacing: '0.01em',
           }}>
-            claude-sonnet
+            
           </span>
         </div>
       </div>
@@ -68,18 +69,17 @@ export default function Header({ onToggleSidebar }) {
 
         {/* Online status */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          padding: '3px 11px',
-          background: 'var(--accent-dim)',
-          border: '1px solid rgba(0,245,160,0.18)',
+          display: 'flex', alignItems: 'center', gap: 7,
+          padding: '5px 12px',
+          background: 'rgba(22, 163, 74, 0.08)',
+          border: '1px solid rgba(22, 163, 74, 0.20)',
           borderRadius: 'var(--radius-full)',
-          fontSize: 10.5, color: 'var(--accent)',
-          fontFamily: 'var(--font-mono)', flexShrink: 0,
+          fontSize: 12, fontWeight: 500, color: 'var(--success)',
+          fontFamily: 'var(--font-body)', flexShrink: 0,
         }}>
           <span style={{
-            width: 5, height: 5, borderRadius: '50%',
-            background: 'var(--accent)', flexShrink: 0,
-            boxShadow: '0 0 6px rgba(0,245,160,0.70)',
+            width: 6, height: 6, borderRadius: '50%',
+            background: 'var(--success)', flexShrink: 0,
             animation: 'pulse 2.2s ease-in-out infinite',
           }} />
           Online
@@ -92,9 +92,9 @@ export default function Header({ onToggleSidebar }) {
             className="ghost-btn ghost-btn-danger"
             onClick={clearChat}
             aria-label="Clear conversation"
-            style={{ animation: 'scaleIn 0.20s ease both' }}
+            style={{ animation: 'scaleIn 0.2s ease both' }}
           >
-            <XIcon size={12} />
+            <XIcon size={14} />
             Clear
           </button>
         )}

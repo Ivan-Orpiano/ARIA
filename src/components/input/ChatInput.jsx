@@ -10,8 +10,8 @@ const isEmpty = (text, files) => !text?.trim() && (!files || files.length === 0)
 const s = {
   outer: {
     background: 'var(--bg-glass)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
     borderTop: '1px solid var(--border-subtle)',
     padding: '0 0 16px',
     flexShrink: 0,
@@ -23,13 +23,12 @@ const s = {
     display: 'flex',
     alignItems: 'flex-end',
     gap: 10,
-    margin: '12px 16px 0',
-    background: 'rgba(8,14,32,0.90)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255,255,255,0.082)',
+    margin: '16px 24px 0',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-mid)',
     borderRadius: 'var(--radius-xl)',
     padding: '10px 12px 10px 18px',
+    boxShadow: 'var(--shadow-sm)',
   },
 
   textarea: {
@@ -43,7 +42,7 @@ const s = {
     fontSize: 14.5,
     lineHeight: 1.6,
     padding: 0,
-    minHeight: 22,
+    minHeight: 24,
     maxHeight: 160,
     overflowY: 'auto',
     caretColor: 'var(--accent)',
@@ -57,10 +56,10 @@ const s = {
   },
 
   iconBtn: (active) => ({
-    width: 36, height: 36,
-    borderRadius: 'var(--radius-full)',
-    background: active ? 'var(--accent-dim)' : 'rgba(255,255,255,0.04)',
-    border: active ? '1px solid rgba(0,245,160,0.28)' : '1px solid rgba(255,255,255,0.072)',
+    width: 38, height: 38,
+    borderRadius: 'var(--radius-sm)',
+    background: active ? 'var(--accent-dim)' : 'var(--bg-subtle)',
+    border: active ? '1px solid var(--border-accent)' : '1px solid var(--border-subtle)',
     cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: active ? 'var(--accent)' : 'var(--text-muted)',
@@ -70,40 +69,36 @@ const s = {
 
   sendBtn: (canSend, isLoading) => ({
     width: 40, height: 40,
-    borderRadius: 'var(--radius-full)',
+    borderRadius: 'var(--radius-sm)',
     background: canSend && !isLoading
       ? 'var(--gradient-send)'
-      : 'rgba(255,255,255,0.04)',
+      : 'var(--bg-hover)',
     border: 'none',
     cursor: canSend && !isLoading ? 'pointer' : 'default',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: canSend && !isLoading ? '#04060F' : 'var(--text-muted)',
-    transition: 'all 0.18s cubic-bezier(0.34,1.3,0.64,1)',
+    color: canSend && !isLoading ? '#FFFFFF' : 'var(--text-muted)',
+    transition: 'all 0.18s ease',
     flexShrink: 0,
-    boxShadow: canSend && !isLoading
-      ? '0 4px 22px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.22)'
-      : 'none',
-    transform: canSend && !isLoading ? 'scale(1.05)' : 'scale(1)',
+    boxShadow: canSend && !isLoading ? 'var(--shadow-md)' : 'none',
+    transform: 'scale(1)',
   }),
 
   hint: {
-    fontSize: 10.5, color: 'var(--text-hint)',
+    fontSize: 12, color: 'var(--text-muted)',
     fontFamily: 'var(--font-body)',
-    padding: '6px 22px 0',
+    padding: '8px 24px 0',
     display: 'flex', justifyContent: 'space-between',
-    letterSpacing: '0.01em',
   },
 
   fileBadge: {
     position: 'absolute', top: -4, right: -4,
     width: 16, height: 16, borderRadius: '50%',
     background: 'var(--accent)',
-    color: '#04060F', fontSize: 9, fontWeight: 700,
+    color: '#FFFFFF', fontSize: 9, fontWeight: 700,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontFamily: 'var(--font-mono)',
-    border: '1.5px solid var(--bg-elevated)',
+    fontFamily: 'var(--font-body)',
+    border: '2px solid var(--bg-surface)',
     lineHeight: 1,
-    boxShadow: '0 0 8px rgba(0,245,160,0.45)',
   },
 };
 
@@ -198,7 +193,7 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
             aria-label="Attach files"
             disabled={isLoading}
           >
-            <PaperclipIcon size={16} />
+            <PaperclipIcon size={17} />
             {hasFiles && (
               <span style={s.fileBadge} aria-hidden="true">
                 {files.length}
@@ -215,15 +210,15 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
             aria-label="Send message"
             disabled={!canSend}
             onMouseDown={(e) => {
-              if (canSend && !isLoading) e.currentTarget.style.transform = 'scale(0.90)';
+              if (canSend && !isLoading) e.currentTarget.style.transform = 'scale(0.92)';
             }}
             onMouseUp={(e) => {
-              e.currentTarget.style.transform = canSend && !isLoading ? 'scale(1.05)' : 'scale(1)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             {isLoading
-              ? <SpinnerIcon size={16} className="icon-spin" />
-              : <SendIcon size={16} />}
+              ? <SpinnerIcon size={17} className="icon-spin" />
+              : <SendIcon size={17} />}
           </button>
         </div>
       </div>
