@@ -1,5 +1,5 @@
 const WEBHOOK_URL =
-  'https://pianoaivan.app.n8n.cloud/webhook-test/aria-message';
+  'https://pianoaivan.app.n8n.cloud/webhook/aria-message';
 
 /* ── Helper: read a File as base64 ───────────────────────────────── */
 const readFileAsBase64 = (file) =>
