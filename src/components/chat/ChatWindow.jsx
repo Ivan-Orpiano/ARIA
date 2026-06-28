@@ -13,8 +13,8 @@ function Aurora() {
       aria-hidden="true"
       style={{
         background:
-          'radial-gradient(900px 600px at 0% -10%, rgba(79,70,229,0.05) 0%, transparent 60%),' +
-          'radial-gradient(700px 500px at 100% 110%, rgba(99,102,241,0.04) 0%, transparent 60%)',
+          'radial-gradient(900px 600px at 0% -10%, rgba(6,182,212,0.06) 0%, transparent 60%),' +
+          'radial-gradient(700px 500px at 100% 110%, rgba(56,189,248,0.05) 0%, transparent 60%)',
       }}
     />
   );

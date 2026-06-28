@@ -14,7 +14,7 @@ const s = {
   dropOverlay: (active) => ({
     position:        'fixed',
     inset:            0,
-    background:      'rgba(79, 70, 229, 0.06)',
+    background:      'rgba(6, 182, 212, 0.06)',
     backdropFilter:  'blur(4px)',
     WebkitBackdropFilter: 'blur(4px)',
     border:          '2px dashed var(--accent)',

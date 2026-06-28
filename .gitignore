@@ -38,3 +38,5 @@ backend/venv/
 #Supabase Secrets
 supabase/
 
+package.json
+package-lock.json

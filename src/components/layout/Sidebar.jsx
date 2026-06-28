@@ -1,8 +1,8 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useRef } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   ChatIcon, FilesIcon, CalendarIcon,
-  MailIcon, SettingsIcon, SparkleIcon, XIcon,
+  MailIcon, SettingsIcon, AriaAvatar, XIcon,
 } from '../icons/Icons';
 
 const NAV_ITEMS = [
@@ -18,9 +18,28 @@ const NAV_ITEMS = [
  *   open:          boolean,
  *   mobileOpen:    boolean,
  *   onCloseMobile: () => void,
+ *   onToggle:      () => void,
  * }} props
  */
-export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
+export default function Sidebar({ open, mobileOpen, onCloseMobile, onToggle }) {
+  const navigate = useNavigate();
+  const clickTimerRef = useRef(null);
+
+  const handleLogoClick = () => {
+    if (clickTimerRef.current) {
+      // Second click within 260 ms — double-click: go to Chat
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      navigate('/');
+    } else {
+      // First click — wait to confirm it is not a double-click
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null;
+        onToggle();
+      }, 260);
+    }
+  };
+
   const className = [
     'sidebar',
     open ? '' : 'collapsed',
@@ -32,12 +51,15 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
 
       {/* ── Header ─────────────────────────────── */}
       <div className="sidebar-header">
-        <div
+        <button
+          type="button"
           className="sidebar-logo"
-          aria-hidden="true"
+          onClick={handleLogoClick}
+          aria-label="Single-click: toggle sidebar · Double-click: go to Chat"
+          title="Single-click: toggle sidebar · Double-click: go to Chat"
         >
-          <SparkleIcon size={18} />
-        </div>
+          <AriaAvatar size={20} />
+        </button>
 
         <div className="sidebar-title-group">
           <div className="sidebar-title">ARIA</div>
@@ -56,7 +78,7 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
 
       {/* ── Nav ────────────────────────────────── */}
       <nav className="sidebar-body" aria-label="Main menu">
-        <div className="sidebar-section-label">Navigation</div>
+        <div className="sidebar-section-label">Services</div>
 
         {NAV_ITEMS.map(({ to, label, icon: Icon, end }, idx) => (
           <NavLink
@@ -64,6 +86,7 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
             to={to}
             end={end}
             onClick={onCloseMobile}
+            title={label}
             className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
           >
             <span style={{
@@ -74,10 +97,13 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
             }}>
               <Icon size={18} />
             </span>
-            <span style={{
-              opacity: 0,
-              animation: `slideInLeft 0.3s ease ${0.07 + idx * 0.042}s both`,
-            }}>
+            <span
+              className="sidebar-item-label"
+              style={{
+                opacity: 0,
+                animation: `slideInLeft 0.3s ease ${0.07 + idx * 0.042}s both`,
+              }}
+            >
               {label}
             </span>
           </NavLink>

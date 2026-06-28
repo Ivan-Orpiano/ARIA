@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   CalendarIcon, MailIcon, FileTextIcon, SearchIcon, ListChecksIcon, BarChartIcon,
-  PaperclipIcon, ZapIcon, MessageSquareIcon, LockIcon, ArrowRightIcon,
+  PaperclipIcon, ZapIcon, MessageSquareIcon, LockIcon, ArrowRightIcon, AriaAvatar,
 } from '../icons/Icons';
 
 /* ── Suggestion data ─────────────────────────────────────────────── */
@@ -27,41 +27,44 @@ const FEATURES = [
   { icon: LockIcon,          label: 'Private & Secure' },
 ];
 
-/* ── ARIA logo mark ─────────────────────────────────────────────── */
+/* ── ARIA logo mark — hero size ────────────────────────────────── */
 function LogoMark() {
   return (
     <div
       role="img"
       aria-label="ARIA logo"
       style={{
-        position: 'relative', width: 88, height: 88, flexShrink: 0,
-        animation: 'scaleIn 0.4s ease both',
+        position: 'relative', width: 92, height: 92, flexShrink: 0,
+        animation: 'scaleIn 0.45s cubic-bezier(0.34,1.2,0.64,1) both',
       }}
     >
-      {/* Soft halo */}
+      {/* Outer ambient glow ring */}
       <div style={{
-        position: 'absolute', inset: -10, borderRadius: 'var(--radius-2xl)',
-        background: 'radial-gradient(circle, rgba(79,70,229,0.14) 0%, transparent 70%)',
+        position: 'absolute', inset: -14,
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(6,182,212,0.18) 0%, rgba(56,189,248,0.08) 45%, transparent 70%)',
+        pointerEvents: 'none',
       }} />
 
-      {/* Outer ring */}
+      {/* Mid ring — border + surface */}
       <div style={{
-        position: 'absolute', inset: 0, borderRadius: 'var(--radius-2xl)',
-        border: '1px solid var(--border-mid)',
+        position: 'absolute', inset: 0,
+        borderRadius: 'var(--radius-2xl)',
+        border: '1px solid var(--border-accent)',
         background: 'var(--bg-surface)',
+        boxShadow: '0 0 0 5px var(--accent-dim), var(--shadow-sm)',
       }} />
 
-      {/* Core */}
+      {/* Inner gradient badge */}
       <div style={{
-        position: 'absolute', inset: 12, borderRadius: 'var(--radius-xl)',
+        position: 'absolute', inset: 11,
+        borderRadius: 'var(--radius-xl)',
         background: 'var(--gradient-brand)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 30, color: '#FFFFFF', fontWeight: 700,
-        fontFamily: 'var(--font-display)',
-        userSelect: 'none', letterSpacing: '-0.04em',
-        boxShadow: '0 8px 20px rgba(79,70,229,0.30), inset 0 1px 0 rgba(255,255,255,0.25)',
+        color: '#FFFFFF',
+        boxShadow: '0 6px 22px rgba(6,182,212,0.42), inset 0 1px 0 rgba(255,255,255,0.24)',
       }}>
-        A
+        <AriaAvatar size={38} />
       </div>
     </div>
   );

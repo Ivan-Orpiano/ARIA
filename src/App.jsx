@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import './styles/globals.css';
 import { ChatProvider } from './context/ChatContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/layout/Sidebar';
 import Header  from './components/layout/Header';
 
@@ -39,6 +40,7 @@ function AppLayout() {
         open={sidebarOpen}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
+        onToggle={toggleSidebar}
       />
 
       {mobileOpen && (
@@ -70,9 +72,11 @@ function AppLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ChatProvider>
-        <AppLayout />
-      </ChatProvider>
+      <ThemeProvider>
+        <ChatProvider>
+          <AppLayout />
+        </ChatProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

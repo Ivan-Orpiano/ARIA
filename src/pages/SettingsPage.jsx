@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ToggleSwitch from '../components/ui/ToggleSwitch';
-import { SettingsIcon } from '../components/icons/Icons';
+import { SettingsIcon, MoonIcon, SunIcon } from '../components/icons/Icons';
+import { useTheme } from '../context/ThemeContext';
 
 const SETTINGS_GROUPS = [
   {
@@ -20,6 +21,7 @@ const SETTINGS_GROUPS = [
 ];
 
 export default function SettingsPage() {
+  const { darkMode, setDarkMode } = useTheme();
   const [settings, setSettings] = useState(
     SETTINGS_GROUPS.flatMap((g) => g.items)
   );
@@ -51,12 +53,28 @@ export default function SettingsPage() {
           </p>
         </div>
 
+        {/* Appearance panel */}
+        <div className="settings-panel" style={{ animationDelay: '0s' }}>
+          <div className="settings-panel-header">
+            {darkMode ? <MoonIcon size={18} /> : <SunIcon size={18} />}
+            <h2>Appearance</h2>
+          </div>
+          <div className="settings-list">
+            <ToggleSwitch
+              label="Dark mode"
+              desc="Switch to a dark color scheme"
+              checked={darkMode}
+              onChange={setDarkMode}
+            />
+          </div>
+        </div>
+
         {/* Settings groups */}
         {SETTINGS_GROUPS.map((group, gi) => (
           <div
             key={group.label}
             className="settings-panel"
-            style={{ animationDelay: `${gi * 0.06}s` }}
+            style={{ animationDelay: `${(gi + 1) * 0.06}s` }}
           >
             {/* Group header */}
             <div className="settings-panel-header">
@@ -87,7 +105,7 @@ export default function SettingsPage() {
           background: 'var(--bg-subtle)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-md)',
-          animation: 'fadeInUp 0.36s ease 0.12s both',
+          animation: 'fadeInUp 0.36s ease 0.18s both',
         }}>
           These preferences are stored for this session only. Account-wide settings sync is coming soon.
         </p>

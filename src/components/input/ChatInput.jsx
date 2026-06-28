@@ -223,11 +223,6 @@ export default function ChatInput({ onSend, isLoading, prefillText = '' }) {
         </div>
       </div>
 
-      {/* Hint bar */}
-      <div style={s.hint} className="chat-input-hint">
-        <span>Enter to send · Shift+Enter for new line</span>
-        {hasFiles && <span>{files.length}/{MAX_FILES_PER_MSG} file(s)</span>}
-      </div>
     </div>
   );
 }

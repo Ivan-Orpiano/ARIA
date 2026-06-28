@@ -87,6 +87,93 @@ export function SparkleIcon(props) {
   );
 }
 
+/* ── ARIA girl-robot avatar ───────────────────────────────────────────
+   Scales cleanly from 14 px (header) to 36 px (welcome hero).
+   Uses currentColor so it is white on the gradient buttons and cyan on
+   light surfaces.                                                       */
+export function AriaAvatar({ size = 24 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {/* Antenna stem */}
+      <line x1="12" y1="5" x2="12" y2="2.8"
+        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+
+      {/* Bow — left wing */}
+      <path d="M12 2.5 L9 1 L9 4 Z" fill="currentColor" />
+      {/* Bow — right wing */}
+      <path d="M12 2.5 L15 1 L15 4 Z" fill="currentColor" />
+      {/* Bow — center knot */}
+      <circle cx="12" cy="2.5" r="1.1" fill="currentColor" />
+
+      {/* Head */}
+      <rect x="3.5" y="5" width="17" height="14.5" rx="4"
+        stroke="currentColor" strokeWidth="1.8" />
+
+      {/* Left ear panel */}
+      <rect x="1.5" y="8.5" width="2" height="5" rx="1"
+        stroke="currentColor" strokeWidth="1.6" />
+      {/* Right ear panel */}
+      <rect x="20.5" y="8.5" width="2" height="5" rx="1"
+        stroke="currentColor" strokeWidth="1.6" />
+
+      {/* Left eye */}
+      <circle cx="8.5" cy="10.5" r="2"
+        stroke="currentColor" strokeWidth="1.6" />
+      {/* Left pupil */}
+      <circle cx="8.5" cy="10.5" r="0.85" fill="currentColor" />
+
+      {/* Right eye */}
+      <circle cx="15.5" cy="10.5" r="2"
+        stroke="currentColor" strokeWidth="1.6" />
+      {/* Right pupil */}
+      <circle cx="15.5" cy="10.5" r="0.85" fill="currentColor" />
+
+      {/* Blush cheeks */}
+      <circle cx="5.5"  cy="13.5" r="1.3" fill="currentColor" fillOpacity="0.28" />
+      <circle cx="18.5" cy="13.5" r="1.3" fill="currentColor" fillOpacity="0.28" />
+
+      {/* Smile */}
+      <path d="M9 14 Q12 16.8 15 14"
+        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ── ARIA brand mark — geometric "A" with three neural nodes ──────────
+   Scales cleanly from 14 px (header chip) to 36 px (welcome hero).
+   Use currentColor so it adapts to any colored background.             */
+export function AriaLogo({ size = 24 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {/* Left leg */}
+      <path d="M3.5 21.5 L12 3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      {/* Right leg */}
+      <path d="M20.5 21.5 L12 3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      {/* Crossbar */}
+      <path d="M7 14 L17 14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+      {/* Apex node — the "mind" of ARIA */}
+      <circle cx="12" cy="3" r="2.4" fill="currentColor" />
+      {/* Crossbar end nodes — neural connections */}
+      <circle cx="7"  cy="14" r="1.7" fill="currentColor" />
+      <circle cx="17" cy="14" r="1.7" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function XIcon(props) {
   return (
     <IconBase {...props}>
@@ -242,6 +329,30 @@ export function AlertTriangleIcon(props) {
       <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
       <line x1="12" y1="9" x2="12" y2="13" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
+    </IconBase>
+  );
+}
+
+export function MoonIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </IconBase>
+  );
+}
+
+export function SunIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
     </IconBase>
   );
 }
