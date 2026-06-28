@@ -11,21 +11,12 @@ const SUGGESTIONS = [
   { icon: FileTextIcon,   label: 'Summarize a document', text: 'Here is my document — please summarize the key points in bullet form.' },
   { icon: SearchIcon,     label: 'Research a topic',     text: 'Research the latest trends in AI automation for small businesses in 2025.' },
   { icon: ListChecksIcon, label: 'Create a task list',   text: 'Create a prioritized task list for launching a new product next month.' },
-  { icon: BarChartIcon,   label: 'Write a report',       text: 'Write a concise executive summary report on Q3 performance highlights.' },
+  { icon: BarChartIcon,   label: 'News Updates',         text:  'List top 3 latest news with brief summaries.' },
 ];
 
-const STATUS_PILLS = [
-  { label: 'Online',  dot: 'var(--success)',    pulse: true  },
-  { label: 'Fast',    dot: 'var(--text-muted)', pulse: false },
-  { label: 'Private', dot: 'var(--text-muted)', pulse: false },
-];
 
-const FEATURES = [
-  { icon: PaperclipIcon,     label: 'File Attachments' },
-  { icon: ZapIcon,           label: 'n8n Automation' },
-  { icon: MessageSquareIcon, label: 'Real-time Chat' },
-  { icon: LockIcon,          label: 'Private & Secure' },
-];
+
+
 
 /* ── ARIA logo mark — hero size ────────────────────────────────── */
 function LogoMark() {
@@ -181,38 +172,7 @@ export default function WelcomeScreen({ onSelectSuggestion }) {
           </p>
         </div>
 
-        {/* Status pill row */}
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-full)',
-          padding: '4px 6px',
-          animation: 'popIn 0.4s ease 0.2s both',
-          opacity: 0, gap: 2,
-          boxShadow: 'var(--shadow-sm)',
-        }}>
-          {STATUS_PILLS.map(({ label, dot, pulse }, i) => (
-            <React.Fragment key={label}>
-              {i > 0 && (
-                <span style={{ width: 1, height: 12, background: 'var(--border-subtle)', display: 'inline-block', flexShrink: 0 }} />
-              )}
-              <span style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '4px 12px', fontSize: 12, fontWeight: 500,
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-body)', whiteSpace: 'nowrap',
-              }}>
-                <span style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: dot, flexShrink: 0,
-                  animation: pulse ? 'pulse 2.2s ease-in-out infinite' : undefined,
-                }} />
-                {label}
-              </span>
-            </React.Fragment>
-          ))}
-        </div>
+
       </div>
 
       {/* ── Suggestion grid ──────────────────────── */}
@@ -247,38 +207,6 @@ export default function WelcomeScreen({ onSelectSuggestion }) {
         </div>
       </div>
 
-      {/* ── Feature bar ──────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        flexWrap: 'wrap', justifyContent: 'center',
-        gap: 2,
-        animation: 'popIn 0.4s ease 0.55s both', opacity: 0,
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-full)',
-        padding: '4px 8px',
-        boxShadow: 'var(--shadow-sm)',
-      }}>
-        {FEATURES.map((f, i) => {
-          const Icon = f.icon;
-          return (
-            <React.Fragment key={f.label}>
-              {i > 0 && (
-                <span style={{ width: 1, height: 14, background: 'var(--border-subtle)', display: 'inline-block', flexShrink: 0 }} />
-              )}
-              <span style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '6px 12px', fontSize: 12.5, fontWeight: 500,
-                color: 'var(--text-muted)', fontFamily: 'var(--font-body)',
-                whiteSpace: 'nowrap',
-              }}>
-                <Icon size={14} />
-                {f.label}
-              </span>
-            </React.Fragment>
-          );
-        })}
-      </div>
     </div>
   );
 }
