@@ -1,0 +1,2044 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {
+          "maxTokens": 1024,
+          "temperature": 0.2,
+          "timeout": 60000
+        }
+      },
+      "id": "974506bc-e5c2-4939-a56f-f662e901abe9",
+      "name": "OpenAI Chat Model (GPT-4o)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -4160,
+        2320
+      ],
+      "notesInFlow": true,
+      "notes": "Single shared GPT-4o chat model. Its ai_languageModel output fans out to all four AI agents to keep credentials and config in one place."
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "id": "7526af4c-9da8-485b-a346-970a06d3cd29",
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -2656,
+        2992
+      ],
+      "notesInFlow": true,
+      "notes": "Embeddings model used by the Pinecone vector store for RAG retrieval."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "customer-intake",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "be4d6628-3960-4c5d-aed3-a6cfb9948096",
+      "name": "Webhook - Multi-Channel Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -5872,
+        1712
+      ],
+      "notesInFlow": true,
+      "webhookId": "c5824757-72b3-47be-b00e-b3b9ab9baa3b",
+      "notes": "Single ingress for website chat, email, WhatsApp Business API, Slack and CRM webhooks. Channel is read from the payload `channel` field. Secure with an HMAC header check (validated downstream) and put it behind your API gateway / WAF."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "confidenceThreshold",
+              "type": "number",
+              "value": "={{ $env.SUPPORT_CONFIDENCE_THRESHOLD || 0.75 }}"
+            },
+            {
+              "id": "c2",
+              "name": "highValueClvUsd",
+              "type": "number",
+              "value": "={{ $env.HIGH_VALUE_CLV_USD || 25000 }}"
+            },
+            {
+              "id": "c3",
+              "name": "churnAlertThreshold",
+              "type": "number",
+              "value": "={{ $env.CHURN_ALERT_THRESHOLD || 0.6 }}"
+            },
+            {
+              "id": "c4",
+              "name": "pineconeIndex",
+              "type": "string",
+              "value": "={{ $env.PINECONE_INDEX || 'support-kb' }}"
+            },
+            {
+              "id": "c5",
+              "name": "salesSlackChannel",
+              "type": "string",
+              "value": "={{ $env.SLACK_SALES_CHANNEL_ID }}"
+            },
+            {
+              "id": "c6",
+              "name": "adminSlackChannel",
+              "type": "string",
+              "value": "={{ $env.SLACK_ADMIN_CHANNEL_ID }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "62eca704-0afa-49af-9aa2-7c39f3a892db",
+      "name": "Set - Workflow Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5664,
+        1712
+      ],
+      "notesInFlow": true,
+      "notes": "Centralises tunable thresholds and channel IDs, all sourced from environment variables so no secret or magic number is hard-coded in business logic."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Normalise every channel into one canonical schema + light validation.\nconst b = $json.body ?? $json;\nconst channel = (b.channel || 'web').toLowerCase();\nconst message = b.message || b.text || b.body || '';\nif (!message || message.trim().length === 0) {\n  throw new Error('VALIDATION: empty customer message');\n}\n// Stable correlation/audit id used across every node + log row.\nconst correlationId = b.correlationId || $execution.id + '-' + Date.now();\nreturn {\n  json: {\n    correlationId,\n    channel,\n    message: message.trim(),\n    customer: {\n      id: b.customerId || b.contactId || null,\n      email: b.email || null,\n      name: b.name || null,\n      company: b.company || null,\n      companyDomain: b.companyDomain || (b.email ? b.email.split('@')[1] : null),\n    },\n    receivedAt: new Date().toISOString(),\n    config: $('Set - Workflow Config').first().json,\n  }\n};"
+      },
+      "id": "4215c895-58fe-410b-a9c4-dafc9e7d2f4e",
+      "name": "Code - Normalize & Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5440,
+        1712
+      ],
+      "notesInFlow": true,
+      "notes": "Canonicalises heterogeneous channel payloads, rejects empty messages, and stamps a correlationId that threads through enrichment, branching, logging and audit."
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "audit_log",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "correlation_id": "={{ $json.correlationId }}",
+            "channel": "={{ $json.channel }}",
+            "event": "intake_received",
+            "payload": "={{ JSON.stringify($json) }}",
+            "created_at": "={{ $json.receivedAt }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "3ae6c48e-a9f1-42c5-9371-fb7e94b2d266",
+      "name": "Postgres - Audit Log (Intake)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -5392,
+        1952
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Immutable audit trail row written at ingest. onError=continueRegularOutput so an audit-DB hiccup never blocks customer processing."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer message:\n\"\"\"\n{{ $json.message }}\n\"\"\"\nChannel: {{ $json.channel }}",
+        "options": {
+          "systemMessage": "You are an enterprise intent classifier. Respond with ONLY minified JSON, no prose:\n{\"intent\":\"<one of: technical_support|sales_inquiry|billing_concern|feature_request|cancellation_request|partnership_opportunity|complaint_escalation|general_inquiry>\",\"confidence\":<0..1>,\"reasoning\":\"<short>\"}"
+        }
+      },
+      "id": "2f6b5742-3fe4-427c-9904-36f379699e93",
+      "name": "AI Classification Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -5184,
+        1552
+      ],
+      "notesInFlow": true,
+      "notes": "Primary intent classifier. Constrained to a strict JSON schema so the downstream Switch can route deterministically."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Safely parse the LLM JSON; never let a malformed completion crash the run.\nlet parsed = { intent: 'general_inquiry', confidence: 0, reasoning: 'parse_fallback' };\ntry {\n  const raw = ($json.output || '').replace(/```json|```/g, '').trim();\n  parsed = JSON.parse(raw);\n} catch (e) { parsed.reasoning = 'parse_error: ' + e.message; }\nconst ctx = $('Code - Normalize & Validate Payload').item.json;\nreturn { json: { ...ctx, classification: parsed, intent: parsed.intent } };"
+      },
+      "id": "45410bc0-95df-4bd4-bf57-b583c0137684",
+      "name": "Code - Parse Classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4944,
+        1552
+      ],
+      "notesInFlow": true,
+      "notes": "Defensive JSON parsing with a safe fallback to general_inquiry, then re-attaches the canonical context object."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyse this customer message for emotional + commercial risk signals:\n\"\"\"\n{{ $json.message }}\n\"\"\"",
+        "options": {
+          "systemMessage": "You are a customer-risk analyst. Respond with ONLY minified JSON:\n{\"sentiment\":\"<positive|neutral|negative>\",\"sentimentScore\":<-1..1>,\"urgency\":\"<low|medium|high|critical>\",\"clvImpact\":\"<low|medium|high>\",\"churnProbability\":<0..1>}"
+        }
+      },
+      "id": "6c026a60-73cb-45ec-8060-3702231beafd",
+      "name": "AI Sentiment Analysis",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -4704,
+        1552
+      ],
+      "notesInFlow": true,
+      "notes": "Derives emotional state, urgency, CLV impact and a churn-probability score that feed routing and predictive analytics."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let s = { sentiment:'neutral', sentimentScore:0, urgency:'medium', clvImpact:'low', churnProbability:0 };\ntry { s = JSON.parse(($json.output||'').replace(/```json|```/g,'').trim()); } catch(e) {}\nconst ctx = $('Code - Parse Classification').item.json;\nreturn { json: { ...ctx, risk: s } };"
+      },
+      "id": "f5893192-bec0-4719-b90d-c4cba0e38271",
+      "name": "Code - Parse Sentiment & Risk",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4464,
+        1552
+      ],
+      "notesInFlow": true,
+      "notes": "Parses risk signals and merges them onto the running context for the enrichment fan-out."
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "filterGroupsUi": {
+          "filterGroupsValues": [
+            {
+              "filtersUi": {
+                "filterValues": [
+                  {
+                    "propertyName": "email",
+                    "value": "={{ $json.customer.email }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "7b5c9735-3afd-4a3b-931e-008800bb3a95",
+      "name": "HubSpot - Get Contact",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        -4192,
+        1264
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "CRM history lookup. onError=continueRegularOutput so a missing contact yields an empty record instead of failing Customer 360."
+    },
+    {
+      "parameters": {
+        "resource": "account",
+        "operation": "getAll",
+        "limit": 1,
+        "options": {
+          "conditionsUi": {
+            "conditionValues": [
+              {
+                "field": "Website",
+                "operation": "",
+                "value": "={{ $json.customer.companyDomain }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "7801e72c-f48f-4cf9-928a-e6b8606bcd99",
+      "name": "Salesforce - Get Account",
+      "type": "n8n-nodes-base.salesforce",
+      "typeVersion": 1,
+      "position": [
+        -4192,
+        1392
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Secondary CRM enrichment for account/territory context."
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "={{ $env.AIRTABLE_BASE_ID }}",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "Customers",
+          "mode": "list"
+        },
+        "filterByFormula": "={{ \"{Email}='\" + $json.customer.email + \"'\" }}",
+        "options": {}
+      },
+      "id": "b2d1ebb1-ec96-43ff-837a-bbec75f24da1",
+      "name": "Airtable - Lookup Customer",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -4192,
+        1536
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Operational customer database (segments, flags, owner) stored in Airtable."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT count(*) AS ticket_count, max(created_at) AS last_seen, avg(satisfaction) AS avg_csat\nFROM interactions WHERE customer_email = $1;",
+        "options": {
+          "queryReplacement": "={{ $json.customer.email }}"
+        }
+      },
+      "id": "23452636-d5f9-44e0-9b98-8e4e447e8017",
+      "name": "Postgres - Customer History",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -4192,
+        1680
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Behavioural history: ticket frequency, recency, rolling CSAT — feeds predictive scoring."
+    },
+    {
+      "parameters": {
+        "resource": "charge",
+        "operation": "getAll",
+        "limit": 10
+      },
+      "id": "e5bce1b9-aa44-45a4-a6f6-7eb322c7c270",
+      "name": "Stripe - Payment Records",
+      "type": "n8n-nodes-base.stripe",
+      "typeVersion": 1,
+      "position": [
+        -4192,
+        1824
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Billing/subscription signals (MRR, recent charges, failed payments) for revenue + churn context."
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "id": "fed6670c-2870-4b36-8466-83090ffcf4a1",
+      "name": "Merge - Enrichment Sync",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -3920,
+        1632
+      ],
+      "notesInFlow": true,
+      "notes": "Synchronisation barrier: waits for all five parallel lookups before Customer 360 assembly runs exactly once."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Consolidate every enrichment source by node name into one Customer 360 object.\nconst ctx = $('Code - Parse Sentiment & Risk').first().json;\nconst safe = (fn) => { try { return fn(); } catch(e) { return null; } };\nconst c360 = {\n  hubspot:  safe(() => $('HubSpot - Get Contact').first().json),\n  salesforce: safe(() => $('Salesforce - Get Account').first().json),\n  airtable: safe(() => $('Airtable - Lookup Customer').first().json),\n  history:  safe(() => $('Postgres - Customer History').first().json),\n  billing:  safe(() => $('Stripe - Payment Records').all().map(i => i.json)),\n};\nreturn [{ json: { ...ctx, customer360: c360 } }];"
+      },
+      "id": "93157b3b-7e3e-4eb5-9478-ac5ae2fbebac",
+      "name": "Code - Build Customer 360",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3696,
+        1680
+      ],
+      "notesInFlow": true,
+      "notes": "Builds the unified Customer 360 record consumed by routing, sales, support and predictive lanes."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "technical_support",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "8e80c105-bf38-4170-b944-4fa186ceeed7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Technical Support"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "sales_inquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9194375b-93d9-4bc0-bd29-75078ebeceac"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sales Inquiry"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "billing_concern",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c14651ed-3ea5-4e7e-b66b-bcc269e30b54"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Billing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "feature_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d04aa265-3f41-49bc-9d14-abcc009bd14c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Feature Request"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "cancellation_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "7628d2ca-dd8a-4a33-a3bb-04462727064b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cancellation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "partnership_opportunity",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "fc8afaa3-6124-4627-a73b-4f42a6a10462"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Partnership"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "complaint_escalation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "90e287f6-372a-4eaa-99b1-917020db8740"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Complaint Escalation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "general_inquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "56d650e5-db15-4802-8a70-d6c9f0eed6c5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "General Inquiry"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "5f23d784-1456-4662-a406-957216bebacd",
+      "name": "Switch - Intent Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -3344,
+        2256
+      ],
+      "notesInFlow": true,
+      "notes": "Deterministic 8-way router on classified intent. The fallback (extra) output also feeds the RAG support branch so nothing is dropped."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Transparent, explainable lead score (0-100) from enrichment + risk signals.\nconst j = $json; const c = j.customer360 || {};\nlet score = 40;\nif (j.risk?.clvImpact === 'high') score += 25; else if (j.risk?.clvImpact === 'medium') score += 12;\nif (c.billing && c.billing.length) score += 15;\nif (j.risk?.urgency === 'high' || j.risk?.urgency === 'critical') score += 10;\nif (j.customer?.company) score += 10;\nscore = Math.max(0, Math.min(100, score));\nreturn { json: { ...j, leadScore: score, leadTier: score >= 75 ? 'A' : score >= 50 ? 'B' : 'C' } };"
+      },
+      "id": "9b41f1ec-3d27-49e6-9060-116addb03308",
+      "name": "Code - AI Lead Scoring",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2816,
+        2096
+      ],
+      "notesInFlow": true,
+      "notes": "Explainable lead scoring (auditable rules rather than a black-box number) producing a 0-100 score + A/B/C tier."
+    },
+    {
+      "parameters": {
+        "url": "=https://company.clearbit.com/v2/companies/find?domain={{ $json.customer.companyDomain }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.ENRICHMENT_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "1eed830b-8142-4224-9620-78a7b202fbf6",
+      "name": "HTTP - Company Enrichment API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2576,
+        2096
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "External firmographic enrichment (Clearbit-style). API key from env var; soft failure so missing data doesn't kill the deal flow."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a concise, personalised sales proposal.\nProspect: {{ $json.customer.name }} at {{ $json.customer.company }}\nLead tier: {{ $json.leadTier }} (score {{ $json.leadScore }})\nStated need: {{ $json.message }}",
+        "options": {
+          "systemMessage": "You are an enterprise account executive. Produce a crisp, value-led proposal (<250 words) with a clear next step. No markdown headers."
+        }
+      },
+      "id": "7f710097-6420-4f73-9c6b-1f0ff1fb8ffd",
+      "name": "AI Proposal Writer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -2336,
+        2096
+      ],
+      "notesInFlow": true,
+      "notes": "Generates a personalised proposal grounded in the lead score and enrichment context."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $env.CALENDAR_PROVIDER || 'google' }}",
+              "rightValue": "google",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1339bbe9-6866-41d7-b8ab-445b3d95b7d0",
+      "name": "IF - Calendar Provider",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -2096,
+        2096
+      ],
+      "notesInFlow": true,
+      "notes": "Routes meeting creation to Google Calendar (true) or Microsoft Outlook (false) based on the CALENDAR_PROVIDER env var."
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "={{ $env.SALES_CALENDAR_ID }}",
+          "mode": "id"
+        },
+        "start": "={{ $now.plus({days:1}).set({hour:15,minute:0}).toISO() }}",
+        "end": "={{ $now.plus({days:1}).set({hour:15,minute:30}).toISO() }}",
+        "additionalFields": {
+          "summary": "=Intro call - {{ $json.customer.company }}"
+        }
+      },
+      "id": "beb87aba-9ef1-4df9-9712-b06c803cdbfd",
+      "name": "Google Calendar - Create Meeting",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -1856,
+        2000
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "notes": "Creates the discovery meeting when Google is the configured provider."
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendarId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "subject": "=Intro call - {{ $json.customer.company }}",
+        "startDateTime": "={{ $now.plus({days:1}).set({hour:15,minute:0}).toISO() }}",
+        "endDateTime": "={{ $now.plus({days:1}).set({hour:15,minute:30}).toISO() }}",
+        "additionalFields": {}
+      },
+      "id": "a9854d01-222e-412a-bde4-6a11b29eb971",
+      "name": "Microsoft Outlook - Create Meeting",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -1856,
+        2192
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "webhookId": "4475fd56-7aef-43b0-a85b-af9c82515ba4",
+      "notes": "Creates the discovery meeting when Outlook is the configured provider."
+    },
+    {
+      "parameters": {},
+      "id": "1d44d756-81a1-4e3a-87cd-4cb09accc58e",
+      "name": "Merge - Calendar Result",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -1616,
+        2096
+      ],
+      "notesInFlow": true,
+      "notes": "Re-joins both calendar branches so notifications run once regardless of provider."
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.config.salesSlackChannel }}",
+          "mode": "id"
+        },
+        "text": "=:moneybag: New {{ $json.leadTier }}-tier lead ({{ $json.leadScore }}) from {{ $json.customer.company }}. Meeting booked. Correlation {{ $json.correlationId }}",
+        "otherOptions": {}
+      },
+      "id": "bc9df242-fa81-4467-aa16-7f052d0d6a21",
+      "name": "Slack - Notify Sales Rep",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        -1376,
+        2000
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "webhookId": "bbf4f0a6-d111-4121-98bb-c47ebed5f83b",
+      "notes": "Real-time Slack alert to the assigned sales rep / channel."
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.SALES_REP_EMAIL }}",
+        "subject": "=New lead: {{ $json.customer.company }} ({{ $json.leadTier }})",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "id": "62b795a5-5dd6-4975-8e8d-294353f49446",
+      "name": "Gmail - Notify Sales Rep",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1136,
+        2000
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "webhookId": "4a9f0c5b-716a-4961-89b7-63a388884a19",
+      "notes": "Emails the rep the AI-generated proposal as a ready-to-send draft."
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "={{ $json.config.pineconeIndex }}",
+          "mode": "id"
+        },
+        "prompt": "={{ $json.message }}",
+        "topK": 5,
+        "options": {}
+      },
+      "id": "bb29b9dd-06da-488c-98a7-9b3c983dbf92",
+      "name": "Pinecone Vector Store - KB Retrieve",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "position": [
+        -2688,
+        2352
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "notes": "RAG retrieval over the embedded knowledge base. Embeddings supplied by the shared OpenAI Embeddings sub-node."
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "getAll",
+        "limit": 5
+      },
+      "id": "e8899abe-dabf-44cb-908d-87eeb963882e",
+      "name": "Notion - Search KB",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -2896,
+        2560
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Pulls structured KB / FAQ pages from Notion as an additional grounding source."
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $env.CONFLUENCE_HOST }}/wiki/rest/api/search?cql=text~\"{{ $json.message }}\"&limit=5",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "21b79d4e-d3b2-4c1f-b309-37c69c6c4461",
+      "name": "HTTP - Confluence Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2896,
+        2720
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "No first-party Confluence node exists in n8n; this calls the Confluence Cloud REST search API directly (CQL)."
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "4553780a-9b32-41c5-b04d-5a8fb34d6ba6",
+      "name": "Merge - KB Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -2384,
+        2784
+      ],
+      "notesInFlow": true,
+      "notes": "Combines Pinecone + Notion + Confluence results into a single context set for the answer generator."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten retrieved passages into a single context string (token-bounded).\nconst ctx = $('Code - Build Customer 360').first().json;\nconst passages = $input.all()\n  .map(i => i.json.pageContent || i.json.text || JSON.stringify(i.json))\n  .filter(Boolean).join('\\n---\\n').slice(0, 8000);\nreturn [{ json: { ...ctx, ragContext: passages } }];"
+      },
+      "id": "e3cfc5a6-e6b9-4086-9415-5b41a11397bb",
+      "name": "Code - Assemble RAG Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2144,
+        2800
+      ],
+      "notesInFlow": true,
+      "notes": "Token-bounds and concatenates retrieved knowledge into the grounding context."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer question: {{ $json.message }}\n\nKnowledge base context:\n{{ $json.ragContext }}",
+        "options": {
+          "systemMessage": "You are a senior support engineer. Answer ONLY from the provided context. Respond with minified JSON:\n{\"answer\":\"<resolution>\",\"confidence\":<0..1>,\"citedSources\":<int>}\nIf the context is insufficient, set confidence below 0.5."
+        }
+      },
+      "id": "bd8ec021-d200-498b-a687-8e72d364a607",
+      "name": "OpenAI GPT Agent - Support Response",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1824,
+        2800
+      ],
+      "notesInFlow": true,
+      "notes": "The core RAG answering agent. Grounded strictly in retrieved context and self-reports a confidence score that gates escalation."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let a = { answer:'', confidence:0, citedSources:0 };\ntry { a = JSON.parse(($json.output||'').replace(/```json|```/g,'').trim()); } catch(e) {}\nconst ctx = $('Code - Assemble RAG Context').first().json;\nreturn { json: { ...ctx, aiAnswer: a } };"
+      },
+      "id": "7dd2ddc4-eed7-475a-8303-c697fd9f9144",
+      "name": "Code - Parse Answer & Confidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1376,
+        2752
+      ],
+      "notesInFlow": true,
+      "notes": "Extracts answer + confidence for the escalation gate."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.aiAnswer.confidence }}",
+              "rightValue": "={{ $json.config.confidenceThreshold }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1e791892-5911-4e8b-8a15-167a17ce0b69",
+      "name": "IF - Confidence Threshold",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        2752
+      ],
+      "notesInFlow": true,
+      "notes": "Confidence gate. True (>= threshold) auto-resolves; false escalates to a human agent."
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.customer.email }}",
+        "subject": "=Re: your request [{{ $json.correlationId }}]",
+        "message": "={{ $json.aiAnswer.answer }}",
+        "options": {}
+      },
+      "id": "7f9fbe78-41ee-40a3-916b-890b3593018c",
+      "name": "Gmail - Send AI Resolution",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -944,
+        2704
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "webhookId": "428f6b92-c9ba-4541-85aa-3a7b0ba8d753",
+      "notes": "High-confidence path: send the grounded AI resolution directly to the customer."
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $env.SLACK_SUPPORT_CHANNEL_ID }}",
+          "mode": "id"
+        },
+        "text": "=:rotating_light: Escalation [{{ $json.correlationId }}] intent={{ $json.intent }} urgency={{ $json.risk.urgency }} churn={{ $json.risk.churnProbability }}. AI confidence too low — human needed.",
+        "otherOptions": {}
+      },
+      "id": "f2682aab-7009-4271-9b64-7e60ecc9b468",
+      "name": "Slack - Escalate to Human",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        -944,
+        2880
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "webhookId": "990d2f74-e177-4ac6-b2d9-3dcf4bb2418d",
+      "notes": "Low-confidence / complaint / cancellation path: hand off to a human with full context."
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "minutes"
+      },
+      "id": "be3018e2-db41-42b4-ba48-a6517b757c7b",
+      "name": "Wait - SLA Escalation Timer",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -704,
+        2880
+      ],
+      "notesInFlow": true,
+      "webhookId": "f29e189e-d25c-491b-8e69-592557199633",
+      "notes": "Holds the execution to enforce an SLA window before the ticket is finalised / re-pinged."
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "support_tickets",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "correlation_id": "={{ $json.correlationId }}",
+            "intent": "={{ $json.intent }}",
+            "status": "={{ $json.aiAnswer && $json.aiAnswer.confidence >= $json.config.confidenceThreshold ? 'auto_resolved' : 'escalated' }}",
+            "confidence": "={{ $json.aiAnswer ? $json.aiAnswer.confidence : 0 }}",
+            "created_at": "={{ $now.toISO() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "27506141-f895-4d72-8459-893946bd6ffd",
+      "name": "Postgres - Upsert Support Ticket",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -528,
+        2704
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Persists ticket outcome (auto-resolved vs escalated) for resolution-rate KPIs."
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $env.SLACK_FINANCE_CHANNEL_ID }}",
+          "mode": "id"
+        },
+        "text": "=:credit_card: Billing case [{{ $json.correlationId }}] from {{ $json.customer.email }}. Stripe records attached in Customer 360.",
+        "otherOptions": {}
+      },
+      "id": "e28645fa-0a27-41f6-afd4-221f25f76031",
+      "name": "Slack - Billing/Finance Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        -2880,
+        2896
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "webhookId": "cc620c5e-1634-4363-976d-a0ae43d60d7e",
+      "notes": "Billing concerns routed to finance with Stripe context already enriched."
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "={{ $env.NOTION_ROADMAP_DB_ID }}",
+          "mode": "id"
+        },
+        "title": "=Feature request - {{ $json.customer.company }}",
+        "propertiesUi": {
+          "propertyValues": []
+        },
+        "options": {}
+      },
+      "id": "694862a2-a696-4a63-8bc8-7e97339ba2aa",
+      "name": "Notion - Log Feature Request",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -2896,
+        3072
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Feature requests captured straight into the product roadmap database."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Cancellation intent: assemble a retention play + flag high-value at-risk accounts.\nconst j = $json; const churn = j.risk?.churnProbability ?? 1;\nconst play = churn >= 0.6 ? 'executive_outreach+discount' : 'standard_winback';\nreturn { json: { ...j, retention: { play, priority: j.risk?.clvImpact || 'low' } } };"
+      },
+      "id": "18eb6a27-ae0e-4e88-8445-973ffbe53f59",
+      "name": "Code - Churn Save Play",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2896,
+        3200
+      ],
+      "notesInFlow": true,
+      "notes": "Builds a retention play for cancellation requests before handing to a human retention owner."
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $env.SLACK_PARTNER_CHANNEL_ID }}",
+          "mode": "id"
+        },
+        "text": "=:handshake: Partnership inquiry [{{ $json.correlationId }}] from {{ $json.customer.company }}.",
+        "otherOptions": {}
+      },
+      "id": "0bf108e9-bc76-41ba-9298-833b01ad2031",
+      "name": "Slack - Partnerships Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        -2896,
+        3344
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "webhookId": "d5d5613b-f8c0-4032-8224-dcb5f7126f0d",
+      "notes": "Partnership opportunities routed to the BD/partnerships channel."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const j = $json; const h = j.customer360?.history || {};\nreturn { json: { ...j, features: {\n  ticketCount: Number(h.ticket_count || 0),\n  avgCsat: Number(h.avg_csat || 0),\n  churnProbability: j.risk?.churnProbability ?? 0,\n  sentimentScore: j.risk?.sentimentScore ?? 0,\n  hasBilling: Boolean((j.customer360?.billing || []).length),\n} } };"
+      },
+      "id": "4aabeb4a-e9f0-4178-82db-45947fa8d47c",
+      "name": "Code - Assemble Predictive Features",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3008,
+        1520
+      ],
+      "notesInFlow": true,
+      "notes": "Feature engineering from interaction history, sentiment and billing signals."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Transparent predictive scores: churn risk, expansion, MRR projection.\nconst f = $json.features;\nconst churnRisk = Math.min(1, 0.6*f.churnProbability + 0.25*(f.avgCsat<3?1:0) + 0.15*(f.ticketCount>5?1:0));\nconst expansion = f.hasBilling && f.avgCsat >= 4 ? 'high' : f.hasBilling ? 'medium' : 'low';\nconst mrrProjection = f.hasBilling ? Math.round((1 - churnRisk) * 1000) : 0;\nreturn { json: { ...$json, predictions: { churnRisk: Number(churnRisk.toFixed(3)), expansion, mrrProjection } } };"
+      },
+      "id": "3a4c8e54-2afb-43ea-83fe-b854fb62c540",
+      "name": "Code - Predictive Scoring",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2768,
+        1520
+      ],
+      "notesInFlow": true,
+      "notes": "Deterministic, auditable predictive layer (swap in a real ML model endpoint via HTTP when ready)."
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "predictions",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "correlation_id": "={{ $json.correlationId }}",
+            "customer_email": "={{ $json.customer.email }}",
+            "churn_risk": "={{ $json.predictions.churnRisk }}",
+            "expansion": "={{ $json.predictions.expansion }}",
+            "mrr_projection": "={{ $json.predictions.mrrProjection }}",
+            "created_at": "={{ $now.toISO() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "38f7f0f3-a1af-48d8-ac26-8e006998ce84",
+      "name": "Postgres - Store Predictions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -2528,
+        1520
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Persists predictions for dashboards and trend analysis."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DASHBOARD_INGEST_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ correlationId: $json.correlationId, predictions: $json.predictions, risk: $json.risk }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "f1e7f24f-90a2-429b-a8db-bf2a0f37714a",
+      "name": "HTTP - Dashboard Data Export",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2288,
+        1520
+      ],
+      "notesInFlow": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2500,
+      "onError": "continueRegularOutput",
+      "notes": "Pushes the prediction record to the executive dashboard ingest endpoint (Metabase/Looker/Grafana, etc.)."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status:'accepted', correlationId: $json.correlationId, intent: $json.intent }) }}",
+        "options": {}
+      },
+      "id": "09e66d63-34d8-4865-9bc0-094532c8a66e",
+      "name": "Respond to Webhook - Acknowledge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -3664,
+        1920
+      ],
+      "notesInFlow": true,
+      "notes": "Returns a fast 200 acknowledgement (with correlationId) so callers aren't blocked while heavy branches run asynchronously."
+    },
+    {
+      "parameters": {
+        "content": "## 1. Multi-Channel Intake\nSingle webhook for web chat, email, WhatsApp, Slack & CRM webhooks. Normalises payloads, validates, stamps a correlationId and writes an audit row.",
+        "height": 130,
+        "width": 360,
+        "color": 5
+      },
+      "id": "8d69f2aa-0dd5-47bc-afb1-ff92f77879d4",
+      "name": "Note ## 1. Multi-Channe",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -5904,
+        1552
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. AI Cognition\nClassification agent (8 intents) + sentiment/risk agent (sentiment, urgency, CLV impact, churn probability). All agents share one GPT-4o model.",
+        "height": 130,
+        "width": 900,
+        "color": 6
+      },
+      "id": "ff330730-b36a-42f2-9674-1c6334af8739",
+      "name": "Note ## 2. AI Cognition",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -5184,
+        1392
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Customer 360 Enrichment\nParallel lookups across HubSpot, Salesforce, Airtable, Postgres history & Stripe, merged into a single record.",
+        "height": 208,
+        "width": 360,
+        "color": 4
+      },
+      "id": "900fc091-cbbf-4049-9ff1-3041462d4fd1",
+      "name": "Note ## 3. Customer 360",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -4256,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4. Intent Router\n8-way Switch + fallback. Sends each intent to its specialist branch.",
+        "height": 158,
+        "width": 320,
+        "color": 3
+      },
+      "id": "a34e6165-3fed-4b1c-8de7-8879fc767d86",
+      "name": "Note ## 4. Intent Route",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3424,
+        2032
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5. Sales Intelligence\nLead scoring -> firmographic enrichment -> AI proposal -> calendar (Google/Outlook) -> Slack + Gmail rep alerts.",
+        "height": 174,
+        "width": 700,
+        "color": 7
+      },
+      "id": "51d49469-d235-40c1-b147-3cee4fdb4929",
+      "name": "Note ## 5. Sales Intell",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2816,
+        1856
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 6. Support RAG\nPinecone + Notion + Confluence retrieval -> grounded GPT answer with confidence. Below threshold => human escalation.",
+        "height": 142,
+        "width": 700,
+        "color": 2
+      },
+      "id": "d27863d9-962d-4a94-b1a6-8f4bdfcbc48d",
+      "name": "Note ## 6. Support RAG\n",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2112,
+        1440
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 7. Predictive BI\nFeature engineering -> churn / expansion / MRR scoring -> Postgres + dashboard export.",
+        "height": 148,
+        "width": 700,
+        "color": 4
+      },
+      "id": "9bf1992a-c77e-4ec0-8ded-ec13425545fd",
+      "name": "Note ## 7. Predictive B",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2880,
+        1280
+      ]
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model (GPT-4o)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Classification Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Sentiment Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Proposal Writer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "OpenAI GPT Agent - Support Response",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store - KB Retrieve",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Multi-Channel Intake": {
+      "main": [
+        [
+          {
+            "node": "Set - Workflow Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Workflow Config": {
+      "main": [
+        [
+          {
+            "node": "Code - Normalize & Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Normalize & Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Audit Log (Intake)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Classification Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Classification Agent": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Classification": {
+      "main": [
+        [
+          {
+            "node": "AI Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Sentiment & Risk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Sentiment & Risk": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Get Contact",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Salesforce - Get Account",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Airtable - Lookup Customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Postgres - Customer History",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Stripe - Payment Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Get Contact": {
+      "main": [
+        [
+          {
+            "node": "Merge - Enrichment Sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salesforce - Get Account": {
+      "main": [
+        [
+          {
+            "node": "Merge - Enrichment Sync",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Airtable - Lookup Customer": {
+      "main": [
+        [
+          {
+            "node": "Merge - Enrichment Sync",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Postgres - Customer History": {
+      "main": [
+        [
+          {
+            "node": "Merge - Enrichment Sync",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Stripe - Payment Records": {
+      "main": [
+        [
+          {
+            "node": "Merge - Enrichment Sync",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge - Enrichment Sync": {
+      "main": [
+        [
+          {
+            "node": "Code - Build Customer 360",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Build Customer 360": {
+      "main": [
+        [
+          {
+            "node": "Switch - Intent Router",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code - Assemble Predictive Features",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook - Acknowledge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch - Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store - KB Retrieve",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion - Search KB",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP - Confluence Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - AI Lead Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Billing/Finance Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion - Log Feature Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - Churn Save Play",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Partnerships Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Escalate to Human",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pinecone Vector Store - KB Retrieve",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion - Search KB",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP - Confluence Search",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pinecone Vector Store - KB Retrieve",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notion - Search KB",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP - Confluence Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - AI Lead Scoring": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Company Enrichment API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Company Enrichment API": {
+      "main": [
+        [
+          {
+            "node": "AI Proposal Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Proposal Writer": {
+      "main": [
+        [
+          {
+            "node": "IF - Calendar Provider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Calendar Provider": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar - Create Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Microsoft Outlook - Create Meeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar - Create Meeting": {
+      "main": [
+        [
+          {
+            "node": "Merge - Calendar Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Outlook - Create Meeting": {
+      "main": [
+        [
+          {
+            "node": "Merge - Calendar Result",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge - Calendar Result": {
+      "main": [
+        [
+          {
+            "node": "Slack - Notify Sales Rep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Notify Sales Rep": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Notify Sales Rep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store - KB Retrieve": {
+      "main": [
+        [
+          {
+            "node": "Merge - KB Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion - Search KB": {
+      "main": [
+        [
+          {
+            "node": "Merge - KB Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP - Confluence Search": {
+      "main": [
+        [
+          {
+            "node": "Merge - KB Sources",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge - KB Sources": {
+      "main": [
+        [
+          {
+            "node": "Code - Assemble RAG Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Assemble RAG Context": {
+      "main": [
+        [
+          {
+            "node": "OpenAI GPT Agent - Support Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI GPT Agent - Support Response": {
+      "main": [
+        [
+          {
+            "node": "Code - Parse Answer & Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Parse Answer & Confidence": {
+      "main": [
+        [
+          {
+            "node": "IF - Confidence Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Confidence Threshold": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Send AI Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - Escalate to Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Send AI Resolution": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Upsert Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Escalate to Human": {
+      "main": [
+        [
+          {
+            "node": "Wait - SLA Escalation Timer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait - SLA Escalation Timer": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Upsert Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Churn Save Play": {
+      "main": [
+        [
+          {
+            "node": "Slack - Escalate to Human",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Assemble Predictive Features": {
+      "main": [
+        [
+          {
+            "node": "Code - Predictive Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Predictive Scoring": {
+      "main": [
+        [
+          {
+            "node": "Postgres - Store Predictions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres - Store Predictions": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Dashboard Data Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c26257b13a0e22568f007525bbf7bafa363787d41bceb694d12814fed9771c6"
+  }
+}

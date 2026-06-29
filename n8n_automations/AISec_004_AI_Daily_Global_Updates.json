@@ -1,0 +1,595 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7,13,19 * * *"
+            }
+          ]
+        }
+      },
+      "id": "21db514a-3f87-43e7-bf33-2cc3c8f3a668",
+      "name": "Daily Schedule (7AM / 1PM / 7PM)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Determine which edition this run produces + carry run metadata downstream.\nconst now = new Date();\nconst hour = now.getHours();\n\nlet edition = 'Morning';\nif (hour >= 11 && hour < 17) edition = 'Afternoon';\nelse if (hour >= 17) edition = 'Evening';\n\nconst dateStr = now.toLocaleDateString('en-US', {\n  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'\n});\n\n// ====== CONFIGURE THESE ======\nconst recipients = 'recipient@example.com';                    // comma-separated allowed\nconst adminEmail = 'admin@example.com';                        // failure alerts go here\nconst fromEmail  = 'AI Daily Newsletter <newsletter@example.com>';\n// =============================\n\nreturn [{\n  json: { runTimestamp: now.toISOString(), edition, dateStr, hour, recipients, adminEmail, fromEmail }\n}];\n"
+      },
+      "id": "107553b4-aa4d-4416-a094-88cba9923ba3",
+      "name": "Set Run Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.bbci.co.uk/news/rss.xml",
+        "options": {}
+      },
+      "id": "ea435aec-771e-4236-a8d6-473787f60e44",
+      "name": "RSS · Top / Breaking News",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        256
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.theverge.com/rss/index.xml",
+        "options": {}
+      },
+      "id": "3c6b6cc9-4404-440f-8176-0e716a1838d1",
+      "name": "RSS · Technology",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        448
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=artificial+intelligence+when:1d&hl=en-US&gl=US&ceid=US:en",
+        "options": {}
+      },
+      "id": "b25a8c7b-b6d7-49b8-9a54-2b9337fcb4e8",
+      "name": "RSS · AI Industry",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        640
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/feed/",
+        "options": {}
+      },
+      "id": "a14844cf-17b4-40fa-bca7-98095ca1071f",
+      "name": "RSS · Business & Startups",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        832
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+        "options": {}
+      },
+      "id": "ebb16f6e-0942-411d-8080-d13f2b18a44f",
+      "name": "RSS · Global Events",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        1024
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30",
+        "options": {}
+      },
+      "id": "98c76b2f-b13c-4bae-a979-73084afa8dd8",
+      "name": "HTTP · Hacker News (Viral Tech)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        1216
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/popular/top.json?limit=25&t=day",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "n8n-ai-newsletter/1.0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cee917f6-bee6-4483-97bb-e0dbf93b8fe6",
+      "name": "HTTP · Reddit Trends (Social)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        1408
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "numberInputs": 7
+      },
+      "id": "3293bd0c-393d-4211-a4a5-053655cb0005",
+      "name": "Merge All Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1184,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten every collected source into one normalized, deduped article list.\nconst cfg = $('Set Run Config').first().json;\nconst incoming = $input.all();\nconst articles = [];\n\nconst push = (a) => {\n  if (!a || !a.title) return;\n  articles.push({\n    title: String(a.title).trim(),\n    summary: String(a.summary || '').trim().slice(0, 600),\n    url: a.url || '',\n    source: a.source || 'News',\n    publishedAt: a.publishedAt || ''\n  });\n};\n\nfor (const item of incoming) {\n  const j = item.json || {};\n\n  // Hacker News (Algolia) -> { hits: [...] }\n  if (Array.isArray(j.hits)) {\n    for (const h of j.hits) push({\n      title: h.title || h.story_title,\n      summary: 'Hacker News front page \\u2022 ' + (h.points || 0) + ' pts, ' + (h.num_comments || 0) + ' comments',\n      url: h.url || h.story_url || ('https://news.ycombinator.com/item?id=' + h.objectID),\n      source: 'Hacker News',\n      publishedAt: h.created_at || ''\n    });\n    continue;\n  }\n\n  // Reddit -> { data: { children: [ { data: {...} } ] } }\n  if (j.data && Array.isArray(j.data.children)) {\n    for (const c of j.data.children) {\n      const d = c.data || {};\n      push({\n        title: d.title,\n        summary: 'r/' + (d.subreddit || 'popular') + ' \\u2022 ' + (d.ups || 0) + ' upvotes',\n        url: d.url_overridden_by_dest || d.url || ('https://reddit.com' + (d.permalink || '')),\n        source: 'Reddit',\n        publishedAt: d.created_utc ? new Date(d.created_utc * 1000).toISOString() : ''\n      });\n    }\n    continue;\n  }\n\n  // RSS Feed Read -> one item per article\n  if (j.title) push({\n    title: j.title,\n    summary: j.contentSnippet || j.content || j.summary || '',\n    url: j.link || j.url || '',\n    source: j.creator || 'News RSS',\n    publishedAt: j.isoDate || j.pubDate || ''\n  });\n}\n\n// Dedupe by normalized title\nconst seen = new Set();\nconst deduped = [];\nfor (const a of articles) {\n  const key = a.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 80);\n  if (key && !seen.has(key)) { seen.add(key); deduped.push(a); }\n}\n\nconst capped = deduped.slice(0, 70);                       // keep prompt within budget\nconst sourcesUsed = [...new Set(capped.map(a => a.source))];\n\nreturn [{\n  json: {\n    config: cfg,\n    runTimestamp: cfg.runTimestamp,\n    dateStr: cfg.dateStr,\n    edition: cfg.edition,\n    articleCount: capped.length,\n    sourcesUsed,\n    articles: capped\n  }\n}];\n"
+      },
+      "id": "d1cede76-5d45-44d5-b2e9-eb269c81dd49",
+      "name": "Normalize & Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are producing the {{ $json.edition }} edition of an AI Daily Newsletter for {{ $json.dateStr }}.\n\nBelow is a JSON array of raw news items collected from RSS feeds, Hacker News and Reddit. Some are duplicates or low quality.\n\nRAW_ARTICLES:\n{{ JSON.stringify($json.articles) }}\n\nTASKS:\n1. Remove duplicate or near-duplicate stories.\n2. Prioritize by importance, credibility and how widely the story is breaking.\n3. Categorize each selected story into exactly one section: topStories, aiTech, business, global or viral.\n4. For each story write: an engaging headline, a concise 1-2 sentence summary, and a short \"whyItMatters\" line. Preserve the original source name and url.\n5. Limits: topStories 4-6, aiTech 3-5, business 3-5, global 3-5, viral 3-5.\n6. Write a quickSummary array with the 5 most important insights of the day (one sentence each).\n7. Write a compelling subjectLine (max 90 chars).\n\nReturn ONLY the structured JSON object — no commentary, markdown or code fences.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the editor-in-chief of a fast, credible daily news briefing. You deduplicate, prioritize by importance and credibility, and summarize crisply and professionally. You never invent facts beyond the provided articles. You always return data that conforms exactly to the requested schema.",
+          "maxIterations": 3
+        }
+      },
+      "id": "0c3bfc6e-1e13-4f76-b47a-9690966c2508",
+      "name": "AI Agent · Newsletter Editor",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1632,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"subjectLine\": \"string\",\n  \"topStories\": [\n    {\n      \"headline\": \"string\",\n      \"summary\": \"string\",\n      \"whyItMatters\": \"string\",\n      \"source\": \"string\",\n      \"url\": \"string\"\n    }\n  ],\n  \"aiTech\": [\n    {\n      \"headline\": \"string\",\n      \"summary\": \"string\",\n      \"whyItMatters\": \"string\",\n      \"source\": \"string\",\n      \"url\": \"string\"\n    }\n  ],\n  \"business\": [\n    {\n      \"headline\": \"string\",\n      \"summary\": \"string\",\n      \"whyItMatters\": \"string\",\n      \"source\": \"string\",\n      \"url\": \"string\"\n    }\n  ],\n  \"global\": [\n    {\n      \"headline\": \"string\",\n      \"summary\": \"string\",\n      \"whyItMatters\": \"string\",\n      \"source\": \"string\",\n      \"url\": \"string\"\n    }\n  ],\n  \"viral\": [\n    {\n      \"headline\": \"string\",\n      \"summary\": \"string\",\n      \"whyItMatters\": \"string\",\n      \"source\": \"string\",\n      \"url\": \"string\"\n    }\n  ],\n  \"quickSummary\": [\n    \"string\"\n  ]\n}"
+      },
+      "id": "8f5844e7-bbe6-4e09-a940-e8d6bb57704c",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1776,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build a responsive, mobile-friendly HTML email + plain-text fallback.\nconst cfg  = $('Set Run Config').first().json;\nconst prep = $('Normalize & Prepare').first().json;\n\n// Agent structured output (defensive: object, {output}, or JSON string)\nlet nl = ($json.output !== undefined) ? $json.output : $json;\nif (typeof nl === 'string') {\n  try { nl = JSON.parse(nl); }\n  catch (e) { const m = nl.match(/\\{[\\s\\S]*\\}/); nl = m ? JSON.parse(m[0]) : {}; }\n}\nnl = nl || {};\n\nconst safe = (v) => (v == null ? '' : String(v));\nconst arr  = (v) => (Array.isArray(v) ? v : []);\nconst topStories = arr(nl.topStories);\nconst aiTech     = arr(nl.aiTech);\nconst business   = arr(nl.business);\nconst global     = arr(nl.global);\nconst viral      = arr(nl.viral);\nconst quick      = arr(nl.quickSummary);\n\nconst subject = '[AI Daily Newsletter] - ' + cfg.dateStr + ' - ' + cfg.edition + ' Edition';\n\nconst card = (s, accent) => `\n  <tr><td style=\"padding:14px 0;border-bottom:1px solid #ececf1;\">\n    <h3 style=\"margin:0 0 6px;font-size:17px;line-height:1.3;color:#16161a;\">${safe(s.headline)}</h3>\n    <p style=\"margin:0 0 8px;font-size:14px;line-height:1.6;color:#3f3f46;\">${safe(s.summary)}</p>\n    ${s.whyItMatters ? `<div style=\"background:${accent}1a;border-left:3px solid ${accent};padding:8px 12px;border-radius:4px;font-size:13px;color:#27272a;\"><strong>Why it matters:</strong> ${safe(s.whyItMatters)}</div>` : ''}\n    ${s.url ? `<a href=\"${safe(s.url)}\" style=\"display:inline-block;margin-top:8px;font-size:12px;color:#6d28d9;text-decoration:none;\">Read more &rarr;</a>` : ''}\n    ${s.source ? `<span style=\"font-size:11px;color:#a1a1aa;margin-left:8px;\">${safe(s.source)}</span>` : ''}\n  </td></tr>`;\n\nconst section = (icon, title, items, accent) => {\n  if (!items.length) return '';\n  return `\n  <tr><td style=\"padding:22px 28px 0;\">\n    <h2 style=\"margin:0 0 4px;font-size:20px;color:${accent};\">${icon} ${title}</h2>\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">${items.map(s => card(s, accent)).join('')}</table>\n  </td></tr>`;\n};\n\nconst quickList = quick.length ? `\n  <tr><td style=\"padding:22px 28px;\">\n    <div style=\"background:#0f172a;border-radius:10px;padding:18px 22px;\">\n      <h2 style=\"margin:0 0 10px;font-size:18px;color:#fbbf24;\">&#9889; Quick Summary &mdash; Top Insights</h2>\n      <ol style=\"margin:0;padding-left:20px;color:#e2e8f0;font-size:14px;line-height:1.9;\">${quick.map(q => `<li>${safe(q)}</li>`).join('')}</ol>\n    </div>\n  </td></tr>` : '';\n\nconst genTime = new Date(cfg.runTimestamp).toLocaleTimeString('en-US');\n\nconst html = `<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>${subject}</title></head>\n<body style=\"margin:0;padding:0;background:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f4f7;padding:24px 12px;\">\n<tr><td align=\"center\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:640px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);\">\n  <tr><td style=\"background:linear-gradient(135deg,#6d28d9,#2563eb);padding:32px 28px;\">\n    <p style=\"margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#ddd6fe;\">AI Daily Newsletter</p>\n    <h1 style=\"margin:6px 0 0;font-size:26px;color:#ffffff;\">${cfg.edition} Edition</h1>\n    <p style=\"margin:6px 0 0;font-size:13px;color:#e0e7ff;\">${cfg.dateStr}</p>\n  </td></tr>\n  ${section('&#128293;', 'Top Trending Stories', topStories, '#dc2626')}\n  ${section('&#129302;', 'AI &amp; Technology Updates', aiTech, '#7c3aed')}\n  ${section('&#128188;', 'Business &amp; Startup News', business, '#0891b2')}\n  ${section('&#127758;', 'Global Events', global, '#059669')}\n  ${section('&#128640;', 'Viral Trends &amp; Social Media', viral, '#ea580c')}\n  ${quickList}\n  <tr><td style=\"padding:24px 28px;background:#fafafa;border-top:1px solid #ececf1;\">\n    <p style=\"margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;\">\n      Generated automatically by your n8n AI Newsletter pipeline.<br>\n      ${prep.articleCount} articles analyzed from ${prep.sourcesUsed.length} sources &middot; ${cfg.dateStr} &middot; Generated at ${genTime}<br>\n      Sources: ${prep.sourcesUsed.join(', ')}\n    </p>\n  </td></tr>\n</table>\n</td></tr></table></body></html>`;\n\nconst txtSection = (title, items) => items.length\n  ? '\\n' + title + '\\n' + items.map(s => '- ' + safe(s.headline) + '\\n  ' + safe(s.summary)\n      + (s.whyItMatters ? '\\n  Why it matters: ' + safe(s.whyItMatters) : '')\n      + (s.url ? '\\n  ' + safe(s.url) : '')).join('\\n') + '\\n'\n  : '';\n\nconst text = [\n  'AI DAILY NEWSLETTER - ' + cfg.edition + ' Edition',\n  cfg.dateStr,\n  '====================================',\n  txtSection('TOP TRENDING STORIES', topStories),\n  txtSection('AI & TECHNOLOGY UPDATES', aiTech),\n  txtSection('BUSINESS & STARTUP NEWS', business),\n  txtSection('GLOBAL EVENTS', global),\n  txtSection('VIRAL TRENDS & SOCIAL MEDIA', viral),\n  quick.length ? '\\nQUICK SUMMARY\\n' + quick.map((q,i)=>(i+1)+'. '+safe(q)).join('\\n') : '',\n  '\\n--\\nGenerated by n8n AI Newsletter - ' + prep.articleCount + ' articles from ' + prep.sourcesUsed.length + ' sources'\n].join('\\n');\n\nreturn [{\n  json: {\n    subject, html, text,\n    edition: cfg.edition, dateStr: cfg.dateStr, runTimestamp: cfg.runTimestamp,\n    recipients: cfg.recipients, adminEmail: cfg.adminEmail, fromEmail: cfg.fromEmail,\n    articleCount: prep.articleCount, sourcesUsed: prep.sourcesUsed,\n    newsletterJson: nl, status: 'pending'\n  }\n}];\n"
+      },
+      "id": "15dd96ac-f67c-45c3-bbfe-eb69182a90ef",
+      "name": "Build HTML Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "91cd879b-ceb6-4016-9904-39d151902043",
+              "leftValue": "={{ ($json.html || '').length }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "70e83774-0a95-43cf-abab-be34084c715e",
+              "leftValue": "={{ ($json.newsletterJson.topStories || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a065488a-4d71-471e-8694-bc52e817c0cf",
+      "name": "IF · Newsletter Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1 — Data Collection\n5 RSS feeds + Hacker News + Reddit, fetched in parallel. Each node retries 3× and **continues on failure** so one dead feed can't break the run. Swap in NewsAPI/GNews HTTP nodes if you have keys.",
+        "height": 216,
+        "width": 360,
+        "color": 5
+      },
+      "id": "56dce89e-855e-415d-9d80-32641a902c6a",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2 — AI Processing\nAI Agent + OpenAI Chat Model + Structured Output Parser dedupe, prioritize, categorize and summarize into strict JSON sections. Swap the chat-model sub-node for Anthropic/Gemini to change provider.",
+        "height": 248,
+        "width": 360,
+        "color": 3
+      },
+      "id": "932b7d8a-fa8d-4625-9286-46dced0949b3",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3 — Build & Validate\nResponsive HTML email + plain-text fallback are assembled, then an IF node validates content before any send.",
+        "height": 214,
+        "width": 300,
+        "color": 7
+      },
+      "id": "806be1ef-e4e2-4c83-b8b1-c8dba20c8994",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2096,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1648,
+        1056
+      ],
+      "id": "38a554e6-f988-47ad-9317-f2023b54d904",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "cVcmpCAoXeYIicd1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ivanritchelorpiano@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2432,
+        832
+      ],
+      "id": "d91d3ada-14f2-404f-9c7a-554a7493c81e",
+      "name": "Send a message",
+      "webhookId": "c0c36ce7-db68-4237-aede-89a3416d16c4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "U1KzlxUtkEb90GRJ",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Schedule (7AM / 1PM / 7PM)": {
+      "main": [
+        [
+          {
+            "node": "Set Run Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Run Config": {
+      "main": [
+        [
+          {
+            "node": "RSS · Top / Breaking News",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS · Technology",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS · AI Industry",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS · Business & Startups",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS · Global Events",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP · Hacker News (Viral Tech)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP · Reddit Trends (Social)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS · Top / Breaking News": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS · Technology": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RSS · AI Industry": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "RSS · Business & Startups": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "RSS · Global Events": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "HTTP · Hacker News (Viral Tech)": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "HTTP · Reddit Trends (Social)": {
+      "main": [
+        [
+          {
+            "node": "Merge All Sources",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Merge All Sources": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Prepare",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Prepare": {
+      "main": [
+        [
+          {
+            "node": "AI Agent · Newsletter Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent · Newsletter Editor": {
+      "main": [
+        [
+          {
+            "node": "Build HTML Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent · Newsletter Editor",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build HTML Email": {
+      "main": [
+        [
+          {
+            "node": "IF · Newsletter Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF · Newsletter Valid?": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent · Newsletter Editor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c26257b13a0e22568f007525bbf7bafa363787d41bceb694d12814fed9771c6"
+  }
+}

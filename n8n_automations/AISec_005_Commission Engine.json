@@ -1,0 +1,1605 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6d643e85-75ed-478b-b563-3aa7616979da",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -560,
+        960
+      ],
+      "id": "c7bb1c09-e6d6-49e3-bc58-8545841cb98b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "## validation\nALLOWED COMMISSION TYPES = \n[\n  'sale',\n  'velocity',\n  'monthly_consistency',\n  'referral_overide',\n  'tier_progression',\n  'welcome_bonus',\n]",
+        "height": 720,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -752,
+        688
+      ],
+      "typeVersion": 1,
+      "id": "0c6b7957-1388-44e1-9ca0-f5ffa8642f9a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## check if user exists",
+        "height": 720,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -368,
+        688
+      ],
+      "typeVersion": 1,
+      "id": "ee38bf62-b3fe-4e86-93a8-8de70aa77a55",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "##  update if needed",
+        "height": 704,
+        "width": 400,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1472,
+        704
+      ],
+      "typeVersion": 1,
+      "id": "567cbae9-6993-4b2d-ac59-7aede3be7d3d",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Function (Run Once for All Items)\n * Validate commission payloads; return original data + valid boolean\n * NOTE: order_id has been deprecated. ALL commission types must provide reference_id (UUID).\n */\n\nconst items = $input.all();\n\nconst UUID_RE =\n  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nconst ALLOWED_TYPES = new Set([\n  'sale',\n  'velocity',\n  'monthly_consistency',\n  'referral_overide',\n  'tier_progression',\n  'welcome_bonus',\n]);\n\nreturn items.map(({ json }) => {\n  const data = { ...json };\n  const errors = [];\n\n  // commission_type\n  const type = String(data.commission_type || '').trim();\n  if (!ALLOWED_TYPES.has(type)) {\n    errors.push(`Invalid commission_type: ${type}`);\n  }\n\n  // affiliate_id\n  if (!data.affiliate_id) {\n    errors.push('affiliate_id is required');\n  } else if (!UUID_RE.test(String(data.affiliate_id))) {\n    errors.push('affiliate_id must be a valid uuid');\n  }\n\n  // commission_amount\n  if (data.commission_amount == null || data.commission_amount === '') {\n    errors.push('commission_amount is required');\n  } else if (!Number.isFinite(Number(data.commission_amount)) || Number(data.commission_amount) <= 0) {\n    errors.push('commission_amount must be a positive number');\n  }\n\n  // reference_id (required for ALL commission types; replaces order_id)\n  if (!data.reference_id) {\n    errors.push('reference_id is required');\n  } else if (!UUID_RE.test(String(data.reference_id))) {\n    errors.push('reference_id must be a valid uuid');\n  }\n\n  return {\n    json: {\n      ...data,\n      valid: errors.length === 0,\n      errors,\n    },\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        960
+      ],
+      "id": "cef68c12-275e-4356-b488-cde8ab14fb82",
+      "name": "Code",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.error || $json.statusCode >= 400) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              },
+              "id": "700e720b-1212-485c-b3b8-49dc022bf13b"
+            },
+            {
+              "id": "e2ea3242-f21e-4bab-917f-57f1030d3755",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9990054f-7da1-4ded-8005-9245d8b5fad7",
+      "name": "ifNetworkError1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        960
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/affiliates'}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "id,name,star_badge,commission_rate,created_at"
+            },
+            {
+              "name": "id",
+              "value": "=eq.{{encodeURIComponent($json.affiliate_id)}}"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 8000
+        }
+      },
+      "id": "1627271b-0c64-4357-a4df-bc12f278b2ad",
+      "name": "checkUserExist",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -352,
+        960
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": false,
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "## check for duplicate commissions ",
+        "height": 704,
+        "width": 416
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1008,
+        704
+      ],
+      "typeVersion": 1,
+      "id": "2d4c6721-59ae-4644-8907-bfc5d02098d1",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Validate if the order_id or reference_id indeed belongs to the user and status is successful",
+        "height": 1408,
+        "width": 976
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "5c9c78f4-775a-417b-8da7-c031855087da",
+      "name": "Sticky Note16"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "30143a55-b776-48f2-a5df-aa579c3160d6",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "={{ $('checkUserExist').first().json.star_badge }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        976
+      ],
+      "id": "6310ce84-cea3-46e2-89fd-10824451e1de",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/commissions' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "affiliate_id",
+              "value": "={{ $('When Executed by Another Workflow').first().json.affiliate_id }}"
+            },
+            {
+              "name": "commission_type",
+              "value": "={{ $('When Executed by Another Workflow').first().json.commission_type }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $('When Executed by Another Workflow').first().json.commission_amount }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $('When Executed by Another Workflow').first().json.description }}"
+            },
+            {
+              "name": "status",
+              "value": "pending"
+            },
+            {
+              "name": "related_data",
+              "value": "={{ $execution }}"
+            },
+            {
+              "name": "reference_id",
+              "value": "={{ $('When Executed by Another Workflow').first().json.reference_id }}"
+            },
+            {
+              "name": "created_at",
+              "value": "={{ $now }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "b0a62692-281f-4762-ab05-13bb8718e9fd",
+      "name": "httpInsertCommission1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1552,
+        928
+      ],
+      "onError": "continueErrorOutput",
+      "notes": "DB: Insert commission with retries"
+    },
+    {
+      "parameters": {
+        "content": "## Error Handling",
+        "width": 2976,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -752,
+        1632
+      ],
+      "typeVersion": 1,
+      "id": "eb706206-d50a-4fb2-868c-d8a1f71614af",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1904,
+        1472
+      ],
+      "id": "01c6c758-47c9-4f23-b25d-ca8cd86d83f7",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('If').item.json.commission_type }}",
+                    "rightValue": "sale",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "139e97b3-522e-4f20-8241-1e7b33d1c9ef"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "sale"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "cf0ebb61-906d-406d-81ac-60e2e74c79cd",
+                    "leftValue": "={{ $('If').item.json.commission_type }}",
+                    "rightValue": "velocity",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "velocity"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "791e29f5-661f-43ac-b0dd-62f565ac6e32",
+                    "leftValue": "={{ $('If').item.json.commission_type }}",
+                    "rightValue": "monthly_consistency",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "monthly_consistency"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9c129903-d18c-436e-8757-d167e0186b18",
+                    "leftValue": "={{ $('If').item.json.commission_type }}",
+                    "rightValue": "referral_overide",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "referral_overide"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "eeb18dde-6c57-4e39-8fb7-856c9d756102",
+                    "leftValue": "={{ $('If').item.json.commission_type }}",
+                    "rightValue": "tier_progression",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "tier_progression"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "22d4d7cc-61e0-463d-abb9-048ac00fca5c",
+                    "leftValue": "={{ $('If').item.json.commission_type }}",
+                    "rightValue": "welcome_bonus",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "welcome_bonus"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        32,
+        880
+      ],
+      "id": "b45306a4-1c5d-4b37-bc5a-71ab2cd74f7b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "content": "## Successful response",
+        "width": 2976,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -752,
+        1440
+      ],
+      "typeVersion": 1,
+      "id": "34885b58-6913-495c-9088-36990b571e57",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/referral_overide_bonus'}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "referrer_id",
+              "value": "=eq.{{encodeURIComponent($json.id)}}"
+            },
+            {
+              "name": "id",
+              "value": "=eq.{{ encodeURIComponent($('When Executed by Another Workflow').item.json.reference_id) }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 8000
+        }
+      },
+      "id": "0920b459-cdcc-454d-a98a-527c8a67a320",
+      "name": "L1_overide_bonus",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        800
+      ],
+      "alwaysOutputData": false,
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/velocity_tracking' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "affiliate_id",
+              "value": "=eq.{{encodeURIComponent($json.id)}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 8000
+        }
+      },
+      "id": "3b37e1ba-16ee-4256-b8d1-d5862b627b6d",
+      "name": "velocity_tracking",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        352
+      ],
+      "alwaysOutputData": false,
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/affiliates' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "select",
+              "value": "id,email,phone"
+            },
+            {
+              "name": "referred_by",
+              "value": "=eq.{{encodeURIComponent($json.id)}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 8000
+        }
+      },
+      "id": "828a91f5-4e85-4230-88e4-2bbff31637e8",
+      "name": "tier_progressions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        1024
+      ],
+      "alwaysOutputData": false,
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "errorMessage": "NETWORK ERROR"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        560,
+        1664
+      ],
+      "id": "e4944516-f1d0-4db5-92c9-b77bda324723",
+      "name": "NETWORK ERROR"
+    },
+    {
+      "parameters": {
+        "errorMessage": "USER DOESNT EXIST"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        1664
+      ],
+      "id": "8a49d827-c31b-400f-89aa-25998c2f6a14",
+      "name": "USER DOESNT EXIST"
+    },
+    {
+      "parameters": {
+        "errorMessage": "FORM DATA INVALID"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        1664
+      ],
+      "id": "398e3986-8107-41f0-94d6-c07b560e724d",
+      "name": "FORM DATA INVALID"
+    },
+    {
+      "parameters": {
+        "errorMessage": "ERROR"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        1664
+      ],
+      "id": "21cde200-9def-4685-9d89-6b60acb5429c",
+      "name": "ERROR"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Inputs:\n// - Main input ($input): array of rows from sales_attribution\n// - \"When Executed by Another Workflow\": single claim JSON (or [JSON])\n\nconst salesData = $input.all().map(i => i.json);\n\n// Read claim safely (object or [object])\nconst rawClaim = $('When Executed by Another Workflow').first().json;\nconst claim = Array.isArray(rawClaim) ? (rawClaim[0] || {}) : (rawClaim || {});\n\n// --- helpers ---\nconst EPS = 0.01;\nconst toNum = (v) => (v == null || v === '' ? NaN : Number(v));\nconst isFiniteNum = (v) => Number.isFinite(toNum(v));\nconst norm = (v) => (v == null ? null : String(v).trim());\n\n// Normalize the lookup key from claim (always reference_id now)\nconst referenceId = norm(claim.reference_id);\n\n// Find attribution rows by treating row.reference_id || row.id || row.order_id as the same key\nconst rowsForRef = referenceId\n  ? salesData.filter(r => {\n      const keys = [norm(r.reference_id), norm(r.id), norm(r.order_id)];\n      return keys.some(k => k && k === referenceId);\n    })\n  : [];\n\nconst reference_id_match = rowsForRef.length > 0;\n\n// Pick the row that matches this affiliate (if any)\nconst affiliateId = norm(claim.affiliate_id);\nconst row = rowsForRef.find(r => norm(r.affiliate_id) === affiliateId) || null;\n\nconst affiliate_id_match = Boolean(row);\nconst reference_id_belongs_to_user = affiliate_id_match;\n\n// commission_match: strict compare to affiliate_commission when present\nlet commission_match = null;\nif (row) {\n  const claimed  = toNum(claim.commission_amount);\n  const expected = toNum(row.affiliate_commission);\n  commission_match = (isFiniteNum(expected) && isFiniteNum(claimed))\n    ? Math.abs(claimed - expected) < EPS\n    : null; // unknown if attribution has no amount\n}\n\n// overall validity: reference exists + belongs to affiliate + (commission_match !== false)\n// (null commission_match = unknown but acceptable; flip to === true if you want it strict)\nconst valid = Boolean(reference_id_match && reference_id_belongs_to_user && commission_match !== false);\n\n// minimal echo of the matched attribution row\nconst matched_attribution = row\n  ? {\n      id: row.id,\n      reference_id: row.reference_id ?? null,\n      order_id: row.order_id ?? null,\n      affiliate_id: row.affiliate_id,\n      attribution_method: norm(row.attribution_method),\n      affiliate_commission: row.affiliate_commission,\n      attribution_data: (() => {\n        const v = row.attribution_data;\n        if (!v) return null;\n        if (typeof v === 'object') return v;\n        try { return JSON.parse(String(v)); } catch { return { raw: String(v) }; }\n      })(),\n      created_at: row.created_at,\n      updated_at: row.updated_at,\n      is_approved: row.is_approved ?? null,\n    }\n  : null;\n\n// return ONE item\nreturn [{\n  json: {\n    ...claim,\n    valid,\n    checks: {\n      reference_id_match,\n      affiliate_id_match,\n      reference_id_belongs_to_user,\n      commission_match,\n    },\n    matched_attribution,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        96
+      ],
+      "id": "63f9b577-a84f-4019-b0a1-1606ed0b2a20",
+      "name": "validateSales"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Inputs:\n// - Main input ($input): array of velocity bonus rows (from velocity table/query)\n// - \"When Executed by Another Workflow\": the commission claim JSON (or an array with one element)\n\nconst velocityRows = $input.all().map(i => i.json);\n\n// Read claim safely whether it's a single JSON or an array with one item\nlet claimRaw = $('When Executed by Another Workflow').first().json;\nconst claim = Array.isArray(claimRaw) ? (claimRaw[0] || {}) : (claimRaw || {});\n\n// --- helpers ---\nconst UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst EPS = 0.01;\nconst toNum = (v) => (v == null || v === '' ? NaN : Number(v));\n\n// Find the velocity record by reference_id (maps to velocity.id)\nconst referenceId =\n  claim?.reference_id && UUID_RE.test(String(claim.reference_id))\n    ? String(claim.reference_id)\n    : null;\n\nconst row = referenceId\n  ? velocityRows.find(r => String(r.id) === referenceId) || null\n  : null;\n\n// reference_id_match: true if claim.reference_id matched a velocity row.id\nconst reference_id_match = Boolean(row);\n\n// affiliate match\nconst affiliate_id_match = row\n  ? String(row.affiliate_id || '') === String(claim.affiliate_id || '')\n  : false;\n\n// reference_id_belongs_to_user: same as affiliate match for velocity\nconst reference_id_belongs_to_user = affiliate_id_match;\n\n// commission compare: bonus_amount vs commission_amount\nlet commission_match = null;\nif (row) {\n  const expected = toNum(row.bonus_amount);\n  const claimed  = toNum(claim.commission_amount);\n  commission_match =\n    Number.isFinite(expected) &&\n    Number.isFinite(claimed) &&\n    Math.abs(claimed - expected) < EPS;\n}\n\n// overall validity (velocity):\n// require reference id match + affiliate match + commission match\nconst valid = Boolean(reference_id_match && reference_id_belongs_to_user && commission_match === true);\n\n// Minimal echo of the matched velocity record\nconst matched_attribution = row\n  ? {\n      id: row.id,\n      affiliate_id: row.affiliate_id,\n      bonus_type: row.bonus_type,\n      referrals_count: row.referrals_count,\n      bonus_amount: row.bonus_amount,\n      window_start: row.window_start,\n      window_end: row.window_end,\n      achieved_at: row.achieved_at,\n      created_at: row.created_at,\n      velocity_referral_ids: row.velocity_referral_ids || [],\n    }\n  : null;\n\n// return ONE item\nreturn [{\n  json: {\n    ...claim,\n    valid,\n    checks: {\n      reference_id_match,\n      affiliate_id_match,\n      reference_id_belongs_to_user,\n      commission_match,\n    },\n    matched_attribution,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        336
+      ],
+      "id": "24d8e6ba-8bb3-40a6-b6b4-5d292cf4b777",
+      "name": "validateVelocity"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n Function (Run Once for All Items)\n * Validate monthly_consistency commission against monthly_consistency_bonus rows.\n * Inputs:\n *  - Main input ($input): array of monthly_consistency_bonus rows\n *  - \"When Executed by Another Workflow\": claim JSON (or array with one item)\n * Output: one item -> { ...claim, valid, checks:{...}, matched_attribution }\n */\n\nconst bonusRows = $input.all().map(i => i.json);\n\n// Claim may be a single JSON or an array with one element\nconst rawClaim = $('When Executed by Another Workflow').first().json;\nconst claim = Array.isArray(rawClaim) ? (rawClaim[0] || {}) : (rawClaim || {});\n\n// Helpers\nconst UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst EPS = 0.01;\nconst toNum = (v) => (v == null || v === '' ? NaN : Number(v));\n\n// Find bonus row by reference_id (claim.reference_id === row.id)\nconst referenceId =\n  claim?.reference_id && UUID_RE.test(String(claim.reference_id))\n    ? String(claim.reference_id)\n    : null;\n\nconst row = referenceId\n  ? bonusRows.find(r => String(r.id) === referenceId) || null\n  : null;\n\n// Checks\nconst reference_id_match = Boolean(row);\n\nconst affiliate_id_match = row\n  ? String(row.affiliate_id || '') === String(claim.affiliate_id || '')\n  : false;\n\nconst reference_id_belongs_to_user = affiliate_id_match;\n\n// commission_match: bonus_amount vs claim.commission_amount\nlet commission_match = null;\nif (row) {\n  const expected = toNum(row.bonus_amount);\n  const claimed  = toNum(claim.commission_amount);\n  commission_match =\n    Number.isFinite(expected) &&\n    Number.isFinite(claimed) &&\n    Math.abs(claimed - expected) < EPS;\n}\n\n// Overall validity: require ref match + affiliate match + commission match\nconst valid = Boolean(reference_id_match && reference_id_belongs_to_user && commission_match === true);\n\n// Minimal echo of matched row\nconst matched_attribution = row ? {\n  id: row.id,\n  affiliate_id: row.affiliate_id,\n  evaluation_year: row.evaluation_year,\n  evaluation_month: row.evaluation_month,\n  sales_at_evaluation: row.sales_at_evaluation,\n  star_badge_at_evaluation: row.star_badge_at_evaluation,\n  affiliate_status_at_evaluation: row.affiliate_status_at_evaluation,\n  bonus_amount: row.bonus_amount,\n  processed_at: row.processed_at,\n  created_at: row.created_at,\n  processing_mode: row.processing_mode,\n} : null;\n\n// Return ONE item\nreturn [{\n  json: {\n    ...claim,\n    valid,\n    checks: {\n      reference_id_match,\n      affiliate_id_match,\n      reference_id_belongs_to_user,\n      commission_match,\n    },\n    matched_attribution,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        560
+      ],
+      "id": "a9735523-d8d3-4473-937e-7ba232c201ed",
+      "name": "validateMonthlyBonus"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Inputs:\n// - Main input ($input): array of l1_overide_bonus rows\n// - \"When Executed by Another Workflow\": claim JSON (or array with one element)\n\nconst bonusRows = $input.all().map(i => i.json);\n\n// Read claim (supports single JSON or [JSON])\nconst rawClaim = $('When Executed by Another Workflow').first().json;\nconst claim = Array.isArray(rawClaim) ? (rawClaim[0] || {}) : (rawClaim || {});\n\n// Helpers\nconst UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst EPS = 0.01;\nconst toNum = (v) => (v == null || v === '' ? NaN : Number(v));\n\n// Find the L1 override row by reference_id (claim.reference_id === row.id)\nconst referenceId =\n  claim?.reference_id && UUID_RE.test(String(claim.reference_id))\n    ? String(claim.reference_id)\n    : null;\n\nconst row = referenceId\n  ? bonusRows.find(r => String(r.id) === referenceId) || null\n  : null;\n\n// Checks\nconst reference_id_match = Boolean(row);\n\n// affiliate must be the REFERRER (L1 override pays the referrer)\nconst affiliate_id_match = row\n  ? String(row.referrer_id || '') === String(claim.affiliate_id || '')\n  : false;\n\nconst reference_id_belongs_to_user = affiliate_id_match;\n\n// commission must match referrer_bonus_amount exactly (±0.01)\nlet commission_match = null;\nif (row) {\n  const expected = toNum(row.referrer_bonus_amount);\n  const claimed  = toNum(claim.commission_amount);\n  commission_match =\n    Number.isFinite(expected) &&\n    Number.isFinite(claimed) &&\n    Math.abs(claimed - expected) < EPS;\n}\n\n// Overall validity (referral_overide):\n// require reference match + affiliate match + commission match\nconst valid = Boolean(reference_id_match && reference_id_belongs_to_user && commission_match === true);\n\n// Minimal echo of matched row\nconst matched_attribution = row ? {\n  id: row.id,\n  referrer_id: row.referrer_id,\n  referred_id: row.referred_id,\n  total_referred_sales: row.total_referred_sales,\n  referrer_bonus_amount: row.referrer_bonus_amount,\n  milestone: row.milestone,\n  milestone_achieved: row.milestone_achieved,             // informational only\n  milestone_achieved_date: row.milestone_achieved_date,   // informational only\n  created_at: row.created_at,\n} : null;\n\n// Return ONE item\nreturn [{\n  json: {\n    ...claim,\n    valid,\n    checks: {\n      reference_id_match,\n      affiliate_id_match,\n      reference_id_belongs_to_user,\n      commission_match,\n    },\n    matched_attribution,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        784
+      ],
+      "id": "52f34c15-e444-4a43-8551-1c95384d450f",
+      "name": "validateOverideBonus"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        1008
+      ],
+      "id": "615d68c8-8577-426c-80c0-6b827bb504d6",
+      "name": "validateTierProgression"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Inputs:\n// - Main input ($input): array with affiliate row(s) (id, name, star_badge, commission_rate, created_at)\n// - \"When Executed by Another Workflow\": claim JSON (or [JSON])\n\nconst rows = $input.all().map(i => i.json);\n\n// Read claim whether it's a single JSON or an array with one item\nconst rawClaim = $('When Executed by Another Workflow').first().json;\nconst claim = Array.isArray(rawClaim) ? (rawClaim[0] || {}) : (rawClaim || {});\n\n// Helpers\nconst UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\n\nconst toNum = (v) => (v == null || v === '' ? NaN : Number(v));\nconst isMYR = (c) => String(c || '').toUpperCase() === 'MYR';\n\nfunction withinLastMonth(iso) {\n  if (!iso) return false;\n  const t = new Date(iso);\n  if (isNaN(t.getTime())) return false;\n  const now = new Date();\n  const oneMonthAgo = new Date(now);\n  oneMonthAgo.setMonth(now.getMonth() - 1);\n  return t >= oneMonthAgo && t <= now;\n}\n\n// --- Resolve the target affiliate row by id (should equal both claim.reference_id and claim.affiliate_id) ---\nconst refId = String(claim.reference_id || '');\nconst affId = String(claim.affiliate_id || '');\n\nconst row = rows.find(r => String(r.id) === refId) || null;\n\n// --- Checks ---\nconst reference_id_match =\n  Boolean(row) && UUID_RE.test(refId) && String(row.id) === refId;\n\nconst affiliate_id_match =\n  Boolean(row) && UUID_RE.test(affId) && String(row.id) === affId;\n\n// For welcome_bonus, the reference belongs to the same user if affiliate_id matches\nconst reference_id_belongs_to_user = Boolean(affiliate_id_match);\n\n// Commission must be exactly 10 MYR\nconst commission_match =\n  toNum(claim.commission_amount) === 10 && isMYR(claim.currency);\n\n// Affiliate must be newly created within the last month\nconst created_recent = row ? withinLastMonth(row.created_at) : false;\n\n// Overall validity: all conditions must be true\nconst valid = Boolean(\n  reference_id_match &&\n  affiliate_id_match &&\n  reference_id_belongs_to_user &&\n  commission_match &&\n  created_recent\n);\n\n// Minimal echo of matched row\nconst matched_attribution = row ? {\n  id: row.id,\n  name: row.name,\n  star_badge: row.star_badge,\n  commission_rate: row.commission_rate,\n  created_at: row.created_at,\n} : null;\n\n// Return ONE item\nreturn [{\n  json: {\n    ...claim,\n    valid,\n    checks: {\n      reference_id_match,\n      affiliate_id_match,\n      reference_id_belongs_to_user,\n      commission_match,\n      created_recent,\n    },\n    matched_attribution,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        1232
+      ],
+      "id": "b73ce0b9-761b-429e-86a7-021a8daf7e01",
+      "name": "validateWelcomeBonus"
+    },
+    {
+      "parameters": {
+        "content": "Validate Sales\nDONE",
+        "height": 192,
+        "width": 592,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "7bb59b57-47f4-40ab-8236-5721ef7fd14a",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fc6cae91-3956-4b4d-8489-5e80a8c6e41d",
+              "leftValue": "={{$json}}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "b8249206-4990-43bc-b368-6b855f2920cd",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8d1f6316-906c-4654-9602-14b38976f4b7",
+              "leftValue": "={{ $json.body }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        944
+      ],
+      "id": "240f5d01-3832-4584-a494-a18e1e4d6b20",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "errorMessage": "NETWORK ERROR"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        1664
+      ],
+      "id": "1a2fb88c-7828-4287-8b9c-f33679279254",
+      "name": "NETWORK ERROR1"
+    },
+    {
+      "parameters": {
+        "errorMessage": "NETWORK ERROR"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        1664
+      ],
+      "id": "833bb067-d82f-4b67-a715-d12dc230526e",
+      "name": "NETWORK ERROR2"
+    },
+    {
+      "parameters": {
+        "errorMessage": "COMMISSION DUPLICATE"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        1664
+      ],
+      "id": "4882a631-7a5b-4050-a581-2b8bcd32ed82",
+      "name": "NETWORK ERROR3"
+    },
+    {
+      "parameters": {
+        "errorMessage": "DATABASE ERROR"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1664,
+        1664
+      ],
+      "id": "0a5ce876-0057-48b4-a6f2-c4f012e0be7a",
+      "name": "DATABASE ERROR"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/commissions' }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "affiliate_id",
+              "value": "=eq.{{ $json.affiliate_id }}"
+            },
+            {
+              "name": "commission_type",
+              "value": "=eq.{{ $json.commission_type }}"
+            },
+            {
+              "name": "reference_id",
+              "value": "=eq.{{ $json.reference_id || null }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "id": "19135211-9e95-4db6-b19b-0f22e32558dc",
+      "name": "getUserCommissions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1072,
+        960
+      ],
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput",
+      "notes": "DB: Insert commission with retries"
+    },
+    {
+      "parameters": {
+        "content": "Validate Velocity\nDONE",
+        "height": 192,
+        "width": 576,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        320
+      ],
+      "typeVersion": 1,
+      "id": "da639b2a-61b1-4013-af0f-da88fd0e3c70",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "Validate monthly_consistency_bonus\nDOING",
+        "height": 192,
+        "width": 576,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        544
+      ],
+      "typeVersion": 1,
+      "id": "254ba9d8-66a8-4703-9c12-ac822fbf7125",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/monthly_consistency_tracking'}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "affiliate_id",
+              "value": "=eq.{{encodeURIComponent($json.id)}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 8000
+        }
+      },
+      "id": "10997af1-0caf-4730-93db-bf4b3150e1ac",
+      "name": "monthly_consistency",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        576
+      ],
+      "alwaysOutputData": false,
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 192,
+        "width": 576,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "13806855-c6df-4b0e-9c1e-482fb3c15b05",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "Validate L1_overide_bonus\ndone",
+        "height": 192,
+        "width": 576,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        752
+      ],
+      "typeVersion": 1,
+      "id": "878471c8-d485-44a3-abe2-1c90409d676f",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 192,
+        "width": 576,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        976
+      ],
+      "typeVersion": 1,
+      "id": "7bd01dbb-8c72-493f-8aab-c50a9446a270",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "content": "### DO NOT CHANGE VARIABLE NAMES",
+        "height": 256,
+        "width": 166,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -928,
+        864
+      ],
+      "typeVersion": 1,
+      "id": "ac820dfd-d3fd-438a-acb9-a2f68d4ac6a6",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SUPABASE_URL + '/rest/v1/sales_attribution'}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "affiliate_id",
+              "value": "=eq.{{encodeURIComponent($json.id)}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 8000
+        }
+      },
+      "id": "c81eebc6-08c1-4f13-a57a-0b9dac6872b6",
+      "name": "sales_attribution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        112
+      ],
+      "alwaysOutputData": false,
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "path": "b5cf1ee4-7cf1-4553-a05c-d390ad0fde4f",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -896,
+        960
+      ],
+      "id": "fb37b0b7-2685-4543-b217-7ef1fa0e5408",
+      "name": "Webhook",
+      "webhookId": "b5cf1ee4-7cf1-4553-a05c-d390ad0fde4f"
+    }
+  ],
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "checkUserExist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FORM DATA INVALID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FORM DATA INVALID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ifNetworkError1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "USER DOESNT EXIST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "checkUserExist": {
+      "main": [
+        [
+          {
+            "node": "ifNetworkError1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "getUserCommissions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "httpInsertCommission1": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DATABASE ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "sales_attribution",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "velocity_tracking",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "monthly_consistency",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "L1_overide_bonus",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "validateWelcomeBonus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "L1_overide_bonus": {
+      "main": [
+        [
+          {
+            "node": "validateOverideBonus",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "velocity_tracking": {
+      "main": [
+        [
+          {
+            "node": "validateVelocity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tier_progressions": {
+      "main": [
+        [
+          {
+            "node": "validateTierProgression",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validateSales": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validateVelocity": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validateMonthlyBonus": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validateOverideBonus": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validateTierProgression": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validateWelcomeBonus": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "httpInsertCommission1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getUserCommissions": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "monthly_consistency": {
+      "main": [
+        [
+          {
+            "node": "validateMonthlyBonus",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sales_attribution": {
+      "main": [
+        [
+          {
+            "node": "validateSales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NETWORK ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "5c26257b13a0e22568f007525bbf7bafa363787d41bceb694d12814fed9771c6"
+  }
+}

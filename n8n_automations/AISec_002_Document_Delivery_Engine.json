@@ -89,24 +89,6 @@
     },
     {
       "parameters": {
-        "resource": "file",
-        "fileId": "={{ $json.fileId }}",
-        "additionalFields": {
-          "mimeType": "=pdf"
-        }
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        4096,
-        1296
-      ],
-      "id": "350b113d-b2d7-4c18-8117-0bfd8c8e0e1b",
-      "name": "Get a file1",
-      "webhookId": "cc72af9a-df32-4d4b-acb0-1195885cb8d2"
-    },
-    {
-      "parameters": {
         "promptType": "define",
         "text": "=You are a professional email writer. Your task is to compose a formal and professional email to accompany an attached PDF document.\n\nContext from the sender: Winchel Construction\nAttached file name: {{ $('Email Extraction1').item.json.fileName }}\n\nInstructions:\n- Write a polished, professional email body suitable for a business context.\n- The tone should be formal but approachable.\n- Reference the attached document naturally in the body.\n- Keep it concise (3–4 short paragraphs).\n- Just use \"Dear Client,\" and do not use \"Dear [Recipient Name]\",\nRespond ONLY with a valid JSON object. No markdown, no backticks, no preamble. Use this exact structure:\n{\n  \"subject\": \"a concise and relevant email subject line\",\n  \"body\": \"the full professional email body as plain text with newlines using \\\\n\"\n}",
         "hasOutputParser": true,
@@ -169,13 +151,13 @@
     },
     {
       "parameters": {
-        "path": "file",
+        "path": "aria-email-assistant",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        2992,
+        3024,
         1360
       ],
       "id": "9bc2d1df-40c5-4f07-a60d-a6b4d7691617",
@@ -222,6 +204,19 @@
       ],
       "id": "4f31b549-3b50-49e6-ac94-f9b343a692c6",
       "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4112,
+        1296
+      ],
+      "id": "a9e6dc8b-d5c6-423d-a76c-75ad1748ab6c",
+      "name": "Edit Fields1"
     }
   ],
   "connections": {
@@ -269,18 +264,7 @@
       "main": [
         [
           {
-            "node": "Get a file1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get a file1": {
-      "main": [
-        [
-          {
-            "node": "AI Agent1",
+            "node": "Edit Fields1",
             "type": "main",
             "index": 0
           }
@@ -336,6 +320,17 @@
         [
           {
             "node": "Extract Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
             "type": "main",
             "index": 0
           }
