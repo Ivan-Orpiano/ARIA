@@ -1,31 +1,60 @@
-import logging 
+import logging
 from contextlib import asynccontextmanager
+from typing import Optional
 
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
+from app.clients.openai_client import OpenAIClient
 from app.core.config import get_settings
-from app.routers import email
-from app.services.n8n_client import N8NClient
+from app.routers import email, rag
+from app.services.llm_service import LLMService
+from app.services.n8n_client import N8nClient
+from app.services.rag.pipeline import RagPipeline
+from app.services.rag.vector_store import OpenAIEmbedder, build_vector_store
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("ai_secretary")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
+
     async with httpx.AsyncClient() as http_client:
         app.state.settings = settings
         app.state.http_client = http_client
         app.state.n8n_client = N8nClient(settings, http_client)
-        yield
-        # AsyncClient will be closed automatically when exiting the context manager
-        
+
+        # RAG pipeline is optional: only built when an API key is present.
+        openai_client: Optional[OpenAIClient] = None
+        app.state.rag_pipeline = None
+        if settings.openai_api_key:
+            openai_client = OpenAIClient(settings)
+            llm = LLMService(openai_client)
+            embedder = OpenAIEmbedder(openai_client)
+            store = build_vector_store(settings)
+            app.state.openai_client = openai_client
+            app.state.llm_service = llm
+            app.state.rag_pipeline = RagPipeline(
+                settings=settings, embedder=embedder, store=store, llm=llm
+            )
+            logger.info("RAG pipeline ready (chat=%s, embed=%s).",
+                        settings.openai_chat_model, settings.openai_embedding_model)
+        else:
+            logger.warning("OPENAI_API_KEY not set; RAG endpoints disabled.")
+
+        try:
+            yield
+        finally:
+            if openai_client is not None:
+                await openai_client.aclose()
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title = "AI Secretary Backend", version = "1.0.0", lifespan=lifespan)
-
+    app = FastAPI(title="AI Secretary Backend", version="1.0.0", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
@@ -34,12 +63,19 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
     )
-    
+
     app.include_router(email.router)
-    
+    app.include_router(rag.router)
+
     @app.get("/health", tags=["meta"])
     async def health():
-        return {"status": "ok", "env": settings.app_env}
-    
+        return {
+            "status": "ok",
+            "env": settings.app_env,
+            "rag_enabled": bool(settings.openai_api_key),
+        }
+
     return app
+
+
 app = create_app()

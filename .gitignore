@@ -40,3 +40,4 @@ supabase/
 
 package.json
 package-lock.json
+backend/requirements.txt
