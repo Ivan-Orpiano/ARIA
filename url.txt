@@ -1,2 +1,0 @@
-Current n8n url: https://pianoaivan.app.n8n.cloud/webhook-test
-
