@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   ChatIcon, FilesIcon, CalendarIcon,
@@ -18,26 +18,19 @@ const NAV_ITEMS = [
  *   open:          boolean,
  *   mobileOpen:    boolean,
  *   onCloseMobile: () => void,
- *   onToggle:      () => void,
  * }} props
+ *
+ * Toggling now lives in the header burger (one visible, predictable
+ * control) — the old single/double-click timer on the logo added a
+ * 260ms delay to every toggle and was undiscoverable. The logo does
+ * the one thing everyone expects a logo to do: go home.
  */
-export default function Sidebar({ open, mobileOpen, onCloseMobile, onToggle }) {
+export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
   const navigate = useNavigate();
-  const clickTimerRef = useRef(null);
 
   const handleLogoClick = () => {
-    if (clickTimerRef.current) {
-      // Second click within 260 ms — double-click: go to Chat
-      clearTimeout(clickTimerRef.current);
-      clickTimerRef.current = null;
-      navigate('/');
-    } else {
-      // First click — wait to confirm it is not a double-click
-      clickTimerRef.current = setTimeout(() => {
-        clickTimerRef.current = null;
-        onToggle();
-      }, 260);
-    }
+    navigate('/');
+    onCloseMobile();
   };
 
   const className = [
@@ -47,7 +40,7 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile, onToggle }) {
   ].filter(Boolean).join(' ');
 
   return (
-    <aside className={className} aria-label="Primary navigation">
+    <aside id="app-sidebar" className={className} aria-label="Primary navigation">
 
       {/* ── Header ─────────────────────────────── */}
       <div className="sidebar-header">
@@ -55,8 +48,8 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile, onToggle }) {
           type="button"
           className="sidebar-logo"
           onClick={handleLogoClick}
-          aria-label="Single-click: toggle sidebar · Double-click: go to Chat"
-          title="Single-click: toggle sidebar · Double-click: go to Chat"
+          aria-label="ARIA — go to Chat"
+          title="Go to Chat"
         >
           <AriaAvatar size={20} />
         </button>
@@ -89,12 +82,15 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile, onToggle }) {
             title={label}
             className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
           >
-            <span style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 22, height: 22, flexShrink: 0,
-              opacity: 0,
-              animation: `slideInLeft 0.3s ease ${0.05 + idx * 0.042}s both`,
-            }}>
+            <span
+              aria-hidden="true"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 22, height: 22, flexShrink: 0,
+                opacity: 0,
+                animation: `slideInLeft 0.3s ease ${0.05 + idx * 0.042}s both`,
+              }}
+            >
               <Icon size={18} />
             </span>
             <span
