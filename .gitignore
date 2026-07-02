@@ -37,3 +37,7 @@ backend/venv/
 
 .requirements.txt
 
+package-lock.json
+package.json
+backend/requirements.txt
+url.txt
