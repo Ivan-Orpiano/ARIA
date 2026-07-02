@@ -3,21 +3,9 @@ import WelcomeScreen   from './WelcomeScreen';
 import MessageBubble   from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
-/* ── Ambient background ─────────────────────────────────────────────
-   Minimal, static wash — a single soft accent tint anchored top-left
-   plus a neutral base, so content reads cleanly on a quiet canvas.    */
+
 function Aurora() {
-  return (
-    <div
-      className="aurora"
-      aria-hidden="true"
-      style={{
-        background:
-          'radial-gradient(900px 600px at 0% -10%, rgba(6,182,212,0.06) 0%, transparent 60%),' +
-          'radial-gradient(700px 500px at 100% 110%, rgba(56,189,248,0.05) 0%, transparent 60%)',
-      }}
-    />
-  );
+  return <div className="aurora" aria-hidden="true" />;
 }
 
 /**

@@ -1,20 +1,50 @@
 import React from 'react';
-import { AriaAvatar, XIcon } from '../icons/Icons';
+import { MenuIcon, XIcon, AriaAvatar } from '../icons/Icons';
 import { useChat } from '../../hooks/useChats';
 
-export default function Header({ onToggleSidebar }) {
+/**
+ * @param {{
+ *   onToggleSidebar: () => void,
+ *   mobileNavOpen?:  boolean,
+ * }} props
+ *
+ * The burger is the single, always-visible sidebar control:
+ *   · desktop / tablet → collapses ⇄ expands the rail
+ *   · mobile (≤768px)  → opens the off-canvas drawer
+ * (App.jsx decides which, based on viewport width.)
+ */
+export default function Header({ onToggleSidebar, mobileNavOpen = false }) {
   const { messages, clearChat } = useChat();
   const hasMessages = messages.length > 0;
 
   return (
     <header className="app-header">
 
+      {/* Left: burger + mobile brand */}
+      <div className="app-header-left">
+        <button
+          type="button"
+          className="burger-btn"
+          onClick={onToggleSidebar}
+          aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-controls="app-sidebar"
+          aria-expanded={mobileNavOpen}
+        >
+          <MenuIcon size={20} />
+        </button>
 
+        {/* Brand — shown only on mobile (CSS), where the
+            sidebar and its logo are hidden off-canvas.   */}
+        <div className="app-header-brand">
+          <span className="app-header-brand-mark" aria-hidden="true">
+            <AriaAvatar size={16} />
+          </span>
+          <span className="app-header-brand-name">ARIA</span>
+        </div>
+      </div>
 
-      {/* Right: status + clear */}
+      {/* Right: actions */}
       <div className="app-header-right">
-
-        {/* Clear button — appears when messages exist */}
         {hasMessages && (
           <button
             type="button"

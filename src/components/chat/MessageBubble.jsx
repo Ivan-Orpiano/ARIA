@@ -45,7 +45,7 @@ function FormattedText({ text }) {
           return (
             <div key={i} style={{ display: 'flex', gap: 10, marginTop: 2 }}>
               <span style={{
-                color: 'var(--accent)', flexShrink: 0,
+                color: 'var(--accent-strong)', flexShrink: 0,
                 fontWeight: 600, fontSize: 13, marginTop: 1,
               }}>
                 {num}.
@@ -72,42 +72,17 @@ function FileChip({ fp }) {
   const meta = getFileMeta(fp);
 
   if (fp.preview) {
-    return (
-      <img
-        src={fp.preview}
-        alt={fp.name}
-        style={{
-          width: 108, height: 72, objectFit: 'cover',
-          borderRadius: 10, border: '1px solid var(--border-mid)',
-          display: 'block', boxShadow: 'var(--shadow-sm)',
-        }}
-      />
-    );
+    return <img src={fp.preview} alt={fp.name} className="file-thumb" />;
   }
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 12px',
-      background: 'var(--chip-bg)',
-      border: '1px solid var(--chip-border)',
-      borderRadius: 10,
-    }}>
-      <span style={{
-        width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
-        color: 'var(--accent)',
-      }}>
+    <div className="file-chip">
+      <span className="file-chip-icn">
         <FileTextIcon size={15} />
       </span>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <span style={{
-          fontSize: 12.5, fontWeight: 500, color: 'var(--text-primary)',
-          maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap', fontFamily: 'var(--font-body)',
-        }}>{fp.name}</span>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}>
+      <div className="file-chip-body">
+        <span className="file-chip-name">{fp.name}</span>
+        <span className="file-chip-meta">
           {meta.label} · {formatFileSize(fp.size)}
         </span>
       </div>
@@ -119,14 +94,14 @@ function FileChip({ fp }) {
 function StatusIcon({ status }) {
   if (status === 'sending') {
     return (
-      <span style={{ color: 'rgba(255,255,255,0.6)', display: 'inline-flex' }}>
+      <span className="msg-status sending" aria-label="Sending">
         <CheckIcon size={13} strokeWidth={2.2} />
       </span>
     );
   }
   if (status === 'sent') {
     return (
-      <span style={{ color: 'rgba(255,255,255,0.85)', display: 'inline-flex' }}>
+      <span className="msg-status sent" aria-label="Sent">
         <CheckCheckIcon size={14} strokeWidth={2.2} />
       </span>
     );
@@ -138,8 +113,7 @@ function StatusIcon({ status }) {
 export default function MessageBubble({ message }) {
   const isUser  = message.role === 'user';
   const isError = Boolean(message.isError);
-  const [copied,  setCopied]  = useState(false);
-  const [hovered, setHovered] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
     if (!navigator.clipboard) return;
@@ -153,155 +127,70 @@ export default function MessageBubble({ message }) {
 
   return (
     <div
+      className={`msg-row${isUser ? ' user' : ''}`}
       aria-label={`${isUser ? 'You' : 'ARIA'} at ${time}: ${message.content}`}
-      style={{
-        marginBottom: 24,
-        animation: 'fadeSlideIn 0.24s ease both',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
-      <div style={{
-        display: 'flex',
-        flexDirection: isUser ? 'row-reverse' : 'row',
-        alignItems: 'flex-end',
-        gap: 12,
-      }}>
+      <span className="msg-avatar">
         <Avatar role={isUser ? 'user' : 'assistant'} size={32} />
+      </span>
 
-        <div style={{ maxWidth: 'min(74%, 680px)', position: 'relative' }}>
+      <div className="msg-col">
 
-          {/* Floating copy button */}
-          {!isError && (
-            <button
-              onClick={handleCopy}
-              aria-label="Copy message"
-              style={{
-                position: 'absolute',
-                top: -32,
-                [isUser ? 'right' : 'left']: 0,
-                display: 'flex', alignItems: 'center', gap: 5,
-                background: 'var(--bg-surface)',
-                border: `1px solid ${copied ? 'var(--border-accent)' : 'var(--border-mid)'}`,
-                borderRadius: 'var(--radius-full)',
-                cursor: 'pointer',
-                color: copied ? 'var(--accent)' : 'var(--text-secondary)',
-                fontSize: 11, fontWeight: 500, padding: '4px 11px',
-                fontFamily: 'var(--font-body)',
-                transition: 'all 0.18s ease',
-                whiteSpace: 'nowrap',
-                opacity: hovered ? 1 : 0,
-                pointerEvents: hovered ? 'auto' : 'none',
-                transform: hovered ? 'translateY(0)' : 'translateY(4px)',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              {copied
-                ? <><CheckIcon size={12} strokeWidth={2.2} /> Copied</>
-                : <><CopyIcon size={12} /> Copy</>}
-            </button>
+        {/* Copy — hover/keyboard reveal on desktop,
+            always visible below the bubble on touch (CSS) */}
+        {!isError && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-label={copied ? 'Copied to clipboard' : 'Copy message'}
+            className={`msg-copy-btn${copied ? ' copied' : ''}`}
+          >
+            {copied
+              ? <><CheckIcon size={12} strokeWidth={2.2} /> Copied</>
+              : <><CopyIcon size={12} /> Copy</>}
+          </button>
+        )}
+
+        {/* Bubble */}
+        <div className={`msg-bubble${isError ? ' error' : ''}`}>
+
+          {/* AI left accent rule */}
+          {!isUser && !isError && (
+            <span className="msg-accent-rule" aria-hidden="true" />
           )}
 
-          {/* Bubble */}
-          <div style={{
-            padding: isUser ? '12px 16px' : '14px 18px',
-            borderRadius: isUser
-              ? '16px 6px 16px 16px'
-              : '6px 16px 16px 16px',
-            background: isError
-              ? 'var(--error-bg)'
-              : isUser
-                ? 'var(--accent)'
-                : 'var(--bg-surface)',
-            border: isError
-              ? '1px solid var(--error-border)'
-              : isUser
-                ? 'none'
-                : '1px solid var(--border-subtle)',
-            boxShadow: isUser
-              ? 'var(--shadow-user)'
-              : isError
-                ? 'none'
-                : 'var(--shadow-sm)',
-            fontSize: 14, lineHeight: 1.65,
-            color: isUser ? '#FFFFFF' : 'var(--text-primary)',
-            fontFamily: 'var(--font-body)',
-            position: 'relative',
-            transition: 'box-shadow 0.18s ease',
-          }}>
-
-            {/* AI left accent rule */}
-            {!isUser && !isError && (
-              <div style={{
-                position: 'absolute', left: 0,
-                top: '16%', height: '68%', width: 3,
-                borderRadius: '0 var(--radius-full) var(--radius-full) 0',
-                background: 'var(--accent)',
-                opacity: 0.9,
-              }} />
-            )}
-
-            {/* Error icon */}
-            {isError && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                color: 'var(--error)', marginBottom: 4, fontWeight: 600,
-              }}>
-                <AlertTriangleIcon size={15} />
-              </div>
-            )}
-
-            {/* Content */}
-            {message.content && (
-              isUser
-                ? <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.content}</div>
-                : <FormattedText text={message.content} />
-            )}
-
-            {/* Streaming cursor */}
-            {message.streaming && (
-              <span style={{
-                display: 'inline-block', width: 2, height: 13,
-                background: 'var(--accent)', marginLeft: 3,
-                verticalAlign: 'text-bottom',
-                animation: 'blink 0.75s ease-in-out infinite',
-                borderRadius: 1,
-              }} />
-            )}
-
-            {/* File attachments */}
-            {message.files?.length > 0 && (
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: 8,
-                marginTop: 12, paddingTop: 12,
-                borderTop: isUser
-                  ? '1px solid rgba(255,255,255,0.18)'
-                  : '1px solid var(--border-subtle)',
-              }}>
-                {message.files.map((fp) => (
-                  <FileChip key={fp.id} fp={fp} />
-                ))}
-              </div>
-            )}
-
-            {/* Timestamp + status */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              marginTop: 8, paddingTop: 8,
-              borderTop: isUser
-                ? '1px solid rgba(255,255,255,0.16)'
-                : '1px solid var(--border-subtle)',
-              justifyContent: isUser ? 'flex-end' : 'flex-start',
-            }}>
-              <span style={{
-                fontSize: 11,
-                color: isUser ? 'rgba(255,255,255,0.72)' : 'var(--text-hint)',
-                fontFamily: 'var(--font-body)', letterSpacing: '0.01em',
-              }}>
-                {time}
-              </span>
-              {isUser && <StatusIcon status={message.status} />}
+          {/* Error icon */}
+          {isError && (
+            <div className="msg-error-icn">
+              <AlertTriangleIcon size={15} />
             </div>
+          )}
+
+          {/* Content */}
+          {message.content && (
+            isUser
+              ? <div className="msg-plain">{message.content}</div>
+              : <FormattedText text={message.content} />
+          )}
+
+          {/* Streaming cursor */}
+          {message.streaming && (
+            <span className="msg-cursor" aria-hidden="true" />
+          )}
+
+          {/* File attachments */}
+          {message.files?.length > 0 && (
+            <div className="msg-files">
+              {message.files.map((fp) => (
+                <FileChip key={fp.id} fp={fp} />
+              ))}
+            </div>
+          )}
+
+          {/* Timestamp + status — divider dropped for a lighter read */}
+          <div className="msg-meta">
+            <span>{time}</span>
+            {isUser && <StatusIcon status={message.status} />}
           </div>
         </div>
       </div>
