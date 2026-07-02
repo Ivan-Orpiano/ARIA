@@ -48,29 +48,29 @@ class OpenAIClient:
     """Client for interacting with the OpenAI API."""
     
     def __init__(self, settings: Settings, client: Optional[AsyncOpenAI] = None) -> None:
-        self.settings = settings
-        self.client = client or AsyncOpenAI(
+        self._settings = settings
+        self._client = client or AsyncOpenAI(
             api_key = settings.openai_api_key,
             base_url = settings.openai_base_url,
             timeout = settings.openai_timeout_seconds,
             max_retries = settings.openai_max_retries,
         )
-        
+
     @property
     def chat_mode(self) -> str:
         """Returns the chat mode based on the settings."""
-        return self.settings.openai_chat_mode
-    
+        return self._settings.openai_chat_mode
+
     @property
     def embedding_model(self) -> str:
         """Returns the embedding model based on the settings."""
-        return self.settings.openai_embedding_model
-    
+        return self._settings.openai_embedding_model
+
     async def aclose(self) -> None:
         """Closes the underlying client connection."""
-    
+
         try:
-            await self.client.aclose()
+            await self._client.close()
         except Exception:
             logger.debug("OpenAI client close failed", exc_info=True)
      
@@ -86,7 +86,7 @@ class OpenAIClient:
     
         try: 
             resp = await self._client.chat.completions.create(
-                model = model or self._setting.openai_chat_model,
+                model = model or self._settings.openai_chat_model,
                 messages = list (messages),
                 temperature = self._settings.openai_temperature if temperature is None else temperature,
                 max_tokens = max_tokens or self._settings.openai_max_output_tokens,
