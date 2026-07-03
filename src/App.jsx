@@ -13,10 +13,7 @@ import EmailPage    from './pages/EmailPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
-/* Three responsive tiers:
-   · mobile  ≤ 768   → sidebar is an off-canvas drawer (burger opens it)
-   · tablet 769–1024 → sidebar starts as a compact rail (content first)
-   · desktop ≥ 1025  → sidebar starts expanded                            */
+
 const MOBILE_BREAKPOINT  = 768;
 const DESKTOP_BREAKPOINT = 1024;
 
@@ -24,21 +21,17 @@ const isMobileViewport = () =>
   typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
 
 function AppLayout() {
-  // Tablet defaults to the rail so content gets the space it needs.
   const [sidebarOpen, setSidebarOpen] = useState(
     () => typeof window === 'undefined' || window.innerWidth > DESKTOP_BREAKPOINT
   );
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 
-  // Close the mobile drawer automatically whenever the route changes,
-  // so picking a nav item on mobile doesn't leave the drawer open over it.
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  // If the viewport grows past the mobile breakpoint (rotation, window
-  // resize), drop the drawer state so it can't linger open off-context.
+
   useEffect(() => {
     const handleResize = () => {
       if (!isMobileViewport()) setMobileOpen(false);
