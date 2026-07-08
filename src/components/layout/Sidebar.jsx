@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   ChatIcon, FilesIcon, CalendarIcon,
   MailIcon, SettingsIcon, AriaAvatar, XIcon,
@@ -17,22 +17,16 @@ const NAV_ITEMS = [
  * @param {{
  *   open:          boolean,
  *   mobileOpen:    boolean,
+ *   onToggle:      () => void,
  *   onCloseMobile: () => void,
  * }} props
  *
- * Toggling now lives in the header burger (one visible, predictable
- * control) — the old single/double-click timer on the logo added a
- * 260ms delay to every toggle and was undiscoverable. The logo does
- * the one thing everyone expects a logo to do: go home.
+ * The logo is the single sidebar toggle control:
+ *   · desktop / tablet → collapses ⇄ expands the rail
+ *   · mobile (≤768px)  → closes the off-canvas drawer
+ * (App.jsx decides which, based on viewport width.)
  */
-export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
-  const navigate = useNavigate();
-
-  const handleLogoClick = () => {
-    navigate('/');
-    onCloseMobile();
-  };
-
+export default function Sidebar({ open, mobileOpen, onToggle, onCloseMobile }) {
   const className = [
     'sidebar',
     open ? '' : 'collapsed',
@@ -47,9 +41,11 @@ export default function Sidebar({ open, mobileOpen, onCloseMobile }) {
         <button
           type="button"
           className="sidebar-logo"
-          onClick={handleLogoClick}
-          aria-label="ARIA — go to Chat"
-          title="Go to Chat"
+          onClick={onToggle}
+          aria-label={mobileOpen ? 'Close navigation menu' : 'Toggle navigation menu'}
+          aria-controls="app-sidebar"
+          aria-expanded={mobileOpen}
+          title="Toggle navigation"
         >
           <AriaAvatar size={20} />
         </button>

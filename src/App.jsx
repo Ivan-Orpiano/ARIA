@@ -50,6 +50,47 @@ function AppLayout() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [mobileOpen]);
 
+  // Mobile: a swipe in from the left edge opens the drawer.
+  // (The sidebar logo toggles/closes; there is no header opener.)
+  useEffect(() => {
+    const EDGE = 28;        // px from the left where a swipe may start
+    const THRESHOLD = 45;   // px of rightward travel to trigger open
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const onTouchStart = (e) => {
+      if (mobileOpen || !isMobileViewport()) return;
+      const t = e.touches[0];
+      if (t.clientX <= EDGE) {
+        startX = t.clientX;
+        startY = t.clientY;
+        tracking = true;
+      }
+    };
+    const onTouchMove = (e) => {
+      if (!tracking) return;
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      // Horizontal-dominant rightward swipe only.
+      if (dx > THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+        setMobileOpen(true);
+        tracking = false;
+      }
+    };
+    const onTouchEnd = () => { tracking = false; };
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [mobileOpen]);
+
   const toggleSidebar = useCallback(() => {
     if (isMobileViewport()) {
       setMobileOpen((open) => !open);
@@ -63,6 +104,7 @@ function AppLayout() {
       <Sidebar
         open={sidebarOpen}
         mobileOpen={mobileOpen}
+        onToggle={toggleSidebar}
         onCloseMobile={() => setMobileOpen(false)}
       />
 
@@ -75,7 +117,7 @@ function AppLayout() {
       )}
 
       <main className="app-main">
-        <Header onToggleSidebar={toggleSidebar} mobileNavOpen={mobileOpen} />
+        <Header />
 
         <div className="app-content">
           <Routes>

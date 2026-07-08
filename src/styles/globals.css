@@ -356,68 +356,11 @@ a { text-decoration: none; }
   flex-shrink: 0;
 }
 
-/* Burger — the one, always-visible sidebar control.
-   Desktop / tablet: collapses ⇄ expands the rail.
-   Mobile:           opens the off-canvas drawer.     */
-.burger-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: color var(--transition-base),
-              background var(--transition-base),
-              border-color var(--transition-base),
-              transform var(--transition-base);
-}
-.burger-btn:hover {
-  color: var(--accent);
-  background: var(--accent-dim);
-  border-color: var(--border-accent);
-}
-.burger-btn:active { transform: scale(0.93); }
-
-/* Brand block in the header — wayfinding for mobile,
-   where the sidebar (and its logo) is off-canvas.    */
-.app-header-brand {
-  display: none;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-}
-.app-header-brand-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--gradient-brand);
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 1px 6px rgba(8, 145, 178, 0.18);
-}
-.app-header-brand-name {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
 @media (max-width: 768px) {
   .app-header {
     height: calc(var(--header-h) + env(safe-area-inset-top));
     padding-top: env(safe-area-inset-top);
   }
-  .app-header-brand { display: flex; }
 }
 @media (max-width: 600px) {
   .app-header {
@@ -501,9 +444,8 @@ a { text-decoration: none; }
 
 /* Comfortable touch targets on coarse pointers */
 @media (pointer: coarse) {
-  .icon-btn,
-  .burger-btn { width: 44px; height: 44px; }
-  .ghost-btn  { padding: 10px 16px; min-height: 44px; }
+  .icon-btn { width: 44px; height: 44px; }
+  .ghost-btn { padding: 10px 16px; min-height: 44px; }
 }
 
 /* ────────────────────────────────────────────
@@ -1454,24 +1396,24 @@ a { text-decoration: none; }
    DARK MODE — token overrides
 ──────────────────────────────────────────── */
 [data-theme="dark"] {
-  /* Backgrounds — deep navy with cyan undertone */
-  --bg-base:     #050E1A;
-  --bg-surface:  #081828;
-  --bg-card:     #0C1F35;
-  --bg-elevated: #102540;
-  --bg-hover:    #132C4A;
-  --bg-subtle:   #091520;
+  /* Backgrounds — deeper near-black with cyan undertone */
+  --bg-base:     #020609;
+  --bg-surface:  #040D16;
+  --bg-card:     #071320;
+  --bg-elevated: #0A1B2C;
+  --bg-hover:    #0D2138;
+  --bg-subtle:   #030A11;
 
   /* Translucent surfaces */
-  --bg-glass:       rgba(8, 24, 40, 0.92);
-  --bg-glass-light: rgba(8, 24, 40, 0.76);
+  --bg-glass:       rgba(3, 9, 15, 0.94);
+  --bg-glass-light: rgba(3, 9, 15, 0.80);
 
   /* Borders */
-  --border-subtle: #0D2035;
-  --border-mid:    #143048;
-  --border-strong: #1E4060;
-  --border-glass:  #0F2840;
-  --border-accent: rgba(34, 211, 238, 0.30);
+  --border-subtle: #0A1826;
+  --border-mid:    #102436;
+  --border-strong: #18324C;
+  --border-glass:  #0B1E30;
+  --border-accent: rgba(34, 211, 238, 0.28);
 
   /* Accent — brighter on dark, but glows stay quiet */
   --accent:         #22D3EE;
@@ -1500,8 +1442,8 @@ a { text-decoration: none; }
   --text-hint:      #3A5A70;
 
   /* File chip */
-  --chip-bg:     #0C1F35;
-  --chip-border: #143048;
+  --chip-bg:     #071320;
+  --chip-border: #102436;
 
   /* Shadows */
   --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.36);

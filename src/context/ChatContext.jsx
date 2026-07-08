@@ -61,7 +61,7 @@ export function ChatProvider({ children }) {
       if (err.name === 'AbortError') return;
 
       const errorContent = err.message?.includes('Failed to fetch')
-        ? 'Network error — check your connection and try again.'
+        ? 'Aria cannot respond right now due to an issue she encountered.'
         : `${err.message ?? 'An unexpected error occurred.'}`;
 
       setError(errorContent);
@@ -72,6 +72,7 @@ export function ChatProvider({ children }) {
         content:   errorContent,
         timestamp: new Date(),
         isError:   true,
+
       };
       setMessages((prev) => [...prev, errMsg]);
 
