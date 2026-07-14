@@ -53,10 +53,10 @@ class VectorStore(Protocol):
     def count(self) -> int: ...
 
 
-class OpenAIEmbedder:
-    """Adapts the OpenAI client to the :class:`Embedder` protocol."""
+class GeminiEmbedder:
+    """Adapts the Gemini client to the :class:`Embedder` protocol."""
 
-    def __init__(self, client) -> None:  # client: OpenAIClient (duck-typed)
+    def __init__(self, client) -> None:  # client: GeminiClient (duck-typed)
         self._client = client
 
     async def embed_documents(self, texts: Sequence[str]) -> List[List[float]]:
