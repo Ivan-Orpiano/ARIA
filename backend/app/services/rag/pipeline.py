@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
-from app.clients.openai_client import LLMError
+from app.clients.gemini_client import LLMError
 from app.core.config import Settings
 from app.services.llm_service import LLMService
 from app.services.rag import prompts
@@ -138,10 +138,10 @@ class RagPipeline:
                 answer="I don't have anything in the knowledge base about that.",
                 sources=[],
                 used_context=False,
-                model=self._settings.openai_chat_model,
+                model=self._settings.gemini_chat_model,
             )
 
-        context_block, used = self._assemble_context(retrieved)
+        context_block, used = self.assemble_context(retrieved)
         user_prompt = prompts.build_rag_user_prompt(question, context_block)
 
         try:
@@ -174,14 +174,14 @@ class RagPipeline:
 
     async def stream_answer(self, question: str, retrieved: Sequence[RetrievedChunk]):
         """Stream a grounded answer for already-retrieved chunks (text deltas)."""
-        context_block, _used = self._assemble_context(retrieved)
+        context_block, _used = self.assemble_context(retrieved)
         user_prompt = prompts.build_rag_user_prompt(question.strip(), context_block)
         async for delta in self._llm.stream(
             user_prompt, system=prompts.RAG_SYSTEM_PROMPT, temperature=0.1
         ):
             yield delta
 
-    def _assemble_context(
+    def assemble_context(
         self, retrieved: Sequence[RetrievedChunk]
     ) -> tuple[str, List[RetrievedChunk]]:
         """Build a numbered context block within the token budget.
