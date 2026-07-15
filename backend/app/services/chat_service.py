@@ -12,8 +12,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
-from app.clients.openai_client import LLMError, Message
+from app.clients.gemini_client import LLMError, Message
 from app.core.config import Settings
+from app.services.briefing_service import BriefingError, BriefingService
 from app.services.llm_service import LLMService
 from app.services.rag import prompts
 from app.services.rag.pipeline import RagError, RagPipeline, Source, _snippet
@@ -52,10 +53,12 @@ class ChatService:
         settings: Settings,
         llm: Optional[LLMService],
         pipeline: Optional[RagPipeline],
+        briefing: Optional[BriefingService] = None,
     ) -> None:
         self._settings = settings
         self._llm = llm
         self._pipeline = pipeline
+        self._briefing = briefing
 
     async def respond(
         self,
@@ -67,6 +70,10 @@ class ChatService:
         message = (message or "").strip()
         if not message:
             raise ChatError("Message must not be empty.")
+
+        briefing_reply = await self._maybe_briefing(message)
+        if briefing_reply is not None:
+            return briefing_reply
 
         if self._llm is None:
             return ChatReply(reply=DEGRADED_REPLY, degraded=True)
@@ -94,6 +101,33 @@ class ChatService:
             model=result.model,
             usage=result.usage,
         )
+
+    async def _maybe_briefing(self, message: str) -> Optional[ChatReply]:
+        """Answer stock/weather/sports asks with live data; None if not one."""
+        if self._briefing is None:
+            return None
+        intent = BriefingService.match_intent(message)
+        if intent is None:
+            return None
+
+        try:
+            data = await self._briefing.run(intent)
+        except BriefingError as exc:
+            logger.warning("Briefing '%s' failed (%s); falling back to LLM.", intent, exc)
+            return None
+
+        if self._llm is None:
+            return ChatReply(reply=data, degraded=True)
+
+        try:
+            result = await self._llm.complete(
+                prompts.build_briefing_user_prompt(message, data),
+                system=prompts.BRIEFING_SYSTEM_PROMPT,
+            )
+            return ChatReply(reply=result.text.strip(), model=result.model, usage=result.usage)
+        except LLMError as exc:
+            logger.warning("Briefing formatting failed (%s); returning raw data.", exc)
+            return ChatReply(reply=data)
 
     async def _retrieve(self, message: str, top_k: Optional[int]) -> List[RetrievedChunk]:
         """Best-effort retrieval: a broken/absent knowledge base never blocks chat."""
