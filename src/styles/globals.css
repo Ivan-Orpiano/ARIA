@@ -1393,6 +1393,153 @@ a { text-decoration: none; }
 }
 
 /* ────────────────────────────────────────────
+   SPLASH SCREEN
+   Boot overlay — same calm-cyan language as the
+   welcome hero (glow / ring / core + wordmark).
+──────────────────────────────────────────── */
+@keyframes splashOrbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes splashBreathe {
+  0%, 100% { opacity: 0.55; transform: scale(1);    }
+  50%      { opacity: 1;    transform: scale(1.06); }
+}
+@keyframes splashSweep {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(310%);  }
+}
+@keyframes splashOut {
+  from { opacity: 1; }
+  to   { opacity: 0; visibility: hidden; }
+}
+@keyframes splashBodyOut {
+  from { transform: scale(1);     }
+  to   { transform: scale(1.03);  }
+}
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;                 /* above sidebar (60) and scrim (55) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(900px 600px at 50% -20%,  var(--accent-glow) 0%, transparent 62%),
+    radial-gradient(700px 500px at 100% 115%, var(--accent-dim)  0%, transparent 60%),
+    var(--bg-base);
+  animation: fadeIn 0.3s ease both;
+}
+.splash-exit {
+  animation: splashOut 0.48s ease forwards;
+  pointer-events: none;
+}
+.splash-exit .splash-body {
+  animation: splashBodyOut 0.48s ease forwards;
+}
+
+.splash-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Logo mark — mirrors .welcome-logo, plus a slow orbit arc */
+.splash-logo {
+  position: relative;
+  width: clamp(84px, 18vw, 104px);
+  aspect-ratio: 1;
+  animation: scaleIn 0.55s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+.splash-logo-glow {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, var(--accent-dim) 45%, transparent 70%);
+  animation: splashBreathe 2.6s ease-in-out 0.5s infinite;
+  pointer-events: none;
+}
+.splash-orbit {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: var(--border-accent);
+  opacity: 0.7;
+  animation: splashOrbit 1.8s linear infinite;
+}
+.splash-logo-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border-accent);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 5px var(--accent-dim), var(--shadow-sm);
+}
+.splash-logo-core {
+  position: absolute;
+  inset: 12px;
+  border-radius: var(--radius-xl);
+  background: var(--gradient-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(8, 145, 178, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.20);
+  animation: float 3.4s ease-in-out 0.6s infinite;
+}
+
+/* Wordmark — staggered letter rise (delays set inline) */
+.splash-wordmark {
+  display: flex;
+  margin-top: 26px;
+  font-family: var(--font-display);
+  font-size: clamp(34px, 8vw, 46px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.splash-wordmark span {
+  display: inline-block;
+  opacity: 0;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.splash-tagline {
+  margin-top: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  opacity: 0;
+  animation: fadeIn 0.6s ease 0.8s both;
+}
+
+/* Indeterminate progress sweep */
+.splash-progress {
+  width: min(180px, 46vw);
+  height: 3px;
+  margin-top: 34px;
+  border-radius: var(--radius-full);
+  background: var(--border-subtle);
+  overflow: hidden;
+  opacity: 0;
+  animation: fadeIn 0.5s ease 0.95s both;
+}
+.splash-progress-fill {
+  width: 34%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand-h);
+  animation: splashSweep 1.15s ease-in-out 1s infinite;
+}
+
+/* ────────────────────────────────────────────
    DARK MODE — token overrides
 ──────────────────────────────────────────── */
 [data-theme="dark"] {

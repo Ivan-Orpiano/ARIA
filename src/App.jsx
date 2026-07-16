@@ -5,6 +5,7 @@ import { ChatProvider } from './context/ChatContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Sidebar from './components/layout/Sidebar';
 import Header  from './components/layout/Header';
+import SplashScreen from './components/ui/SplashScreen';
 
 import ChatPage     from './pages/ChatPage';
 import FilesPage    from './pages/FilesPage';
@@ -135,10 +136,15 @@ function AppLayout() {
 }
 
 export default function App() {
+  // Splash overlays the layout while it mounts underneath, so the
+  // fade-out reveals a ready main page.
+  const [booting, setBooting] = useState(true);
+
   return (
     <BrowserRouter>
       <ThemeProvider>
         <ChatProvider>
+          {booting && <SplashScreen onDone={() => setBooting(false)} />}
           <AppLayout />
         </ChatProvider>
       </ThemeProvider>
