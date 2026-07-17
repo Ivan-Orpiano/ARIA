@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List, Optional
+from typing import List
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,19 +37,27 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development")
     log_level: str = Field(default="INFO", description="Root log level (DEBUG/INFO/WARNING/...).")
 
-    # ── OpenAI / LLM provider ─────────────────────────────────────
-    openai_api_key: str = Field(default="", description="OpenAI API key. RAG endpoints are disabled if empty.")
-    openai_base_url: Optional[str] = Field(
-        default=None,
-        description="Override base URL (Azure OpenAI, a proxy, or a compatible provider).",
+    # ── Gemini / LLM provider ─────────────────────────────────────
+    gemini_api_key: str = Field(default="", description="Google Gemini API key. RAG endpoints are disabled if empty.")
+    gemini_chat_model: str = Field(default="gemini-2.5-flash", description="Chat/completions model.")
+    gemini_embedding_model: str = Field(default="gemini-embedding-001", description="Embedding model.")
+    gemini_timeout_seconds: float = Field(default=30.0)
+    gemini_temperature: float = Field(default=0.2, ge=0.0, le=2.0)
+    gemini_max_output_tokens: int = Field(default=1024, ge=1)
+    gemini_embedding_batch_size: int = Field(default=64, ge=1)
+
+    # ── Briefings (welcome-screen suggestions) ────────────────────
+    stock_symbols: str = Field(
+        default="^GSPC,^DJI,^IXIC",
+        description="Comma-separated Yahoo Finance symbols shown in the stock market update.",
     )
-    openai_chat_model: str = Field(default="gpt-4o-mini", description="Chat/completions model.")
-    openai_embedding_model: str = Field(default="text-embedding-3-small", description="Embedding model.")
-    openai_timeout_seconds: float = Field(default=30.0)
-    openai_max_retries: int = Field(default=3, description="SDK-level retries on 429/5xx/connection errors.")
-    openai_temperature: float = Field(default=0.2, ge=0.0, le=2.0)
-    openai_max_output_tokens: int = Field(default=1024, ge=1)
-    openai_embedding_batch_size: int = Field(default=64, ge=1)
+    weather_latitude: float = Field(default=14.5995, description="Latitude for the weather forecast.")
+    weather_longitude: float = Field(default=120.9842, description="Longitude for the weather forecast.")
+    weather_location_name: str = Field(default="Manila", description="Display name for the forecast location.")
+    sports_leagues: str = Field(
+        default="4387,4424,4328",  # NBA, MLB, English Premier League
+        description="Comma-separated TheSportsDB league ids polled for the sports update.",
+    )
 
     # ── RAG / vector store ────────────────────────────────────────
     vector_store: str = Field(default="chroma", description="'chroma' (persistent) or 'memory' (ephemeral).")
