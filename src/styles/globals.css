@@ -1393,9 +1393,13 @@ a { text-decoration: none; }
 }
 
 /* ────────────────────────────────────────────
-   SPLASH SCREEN
-   Boot overlay — same calm-cyan language as the
-   welcome hero (glow / ring / core + wordmark).
+   SPLASH SCREEN — vault-door boot sequence
+   3s choreography over an animated backdrop:
+   the combination wheel spins, the locking
+   bolts retract, the door swings open and the
+   brand rises out of the lit chamber.
+   Timings mirror HOLD_MS / EXIT_MS in
+   SplashScreen.jsx.
 ──────────────────────────────────────────── */
 @keyframes splashOrbit {
   to { transform: rotate(360deg); }
@@ -1417,6 +1421,76 @@ a { text-decoration: none; }
   to   { transform: scale(1.03);  }
 }
 
+/* Backdrop motion */
+@keyframes splashDriftA {
+  from { transform: translate3d(0, 0, 0) scale(1);            }
+  to   { transform: translate3d(6vmax, 4vmax, 0) scale(1.15); }
+}
+@keyframes splashDriftB {
+  from { transform: translate3d(0, 0, 0) scale(1.1);            }
+  to   { transform: translate3d(-5vmax, -4vmax, 0) scale(0.95); }
+}
+@keyframes splashGridPan {
+  from { transform: translate3d(0, 0, 0);       }
+  to   { transform: translate3d(46px, 46px, 0); }
+}
+@keyframes splashRise {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0; }
+  10%  { opacity: 0.4;  }
+  85%  { opacity: 0.15; }
+  100% { transform: translate3d(0, calc(-100vh - 24px), 0); opacity: 0; }
+}
+@keyframes splashFlash {
+  0%   { opacity: 0; }
+  22%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Vault choreography: dial → clunk → bolts → door → reveal */
+@keyframes splashVaultIn {
+  from { opacity: 0; transform: scale(0.72); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+@keyframes splashWheel {
+  0%   { transform: rotate(0deg);    animation-timing-function: cubic-bezier(0.5, 0.05, 0.25, 1); }
+  38%  { transform: rotate(-210deg); animation-timing-function: cubic-bezier(0.45, 0, 0.4, 1);    }
+  48%  { transform: rotate(-192deg); animation-timing-function: cubic-bezier(0.5, 0.05, 0.22, 1); }
+  86%  { transform: rotate(168deg);  animation-timing-function: ease-out;                         }
+  100% { transform: rotate(152deg); }
+}
+@keyframes splashClunk {
+  0%   { transform: none; }
+  30%  { transform: translateX(-1.5px) rotate(-0.8deg); }
+  60%  { transform: translateX(1px) rotate(0.5deg);     }
+  100% { transform: none; }
+}
+@keyframes splashBoltRetract {
+  to { transform: translateX(-50%) translateY(78%); opacity: 0.25; }
+}
+@keyframes splashDoorOpen {
+  from { transform: perspective(1200px) rotateY(0deg);    }
+  to   { transform: perspective(1200px) rotateY(-106deg); }
+}
+@keyframes splashGlowIn {
+  from { opacity: 0;    transform: scale(0.55); }
+  to   { opacity: 0.55; transform: scale(1);    }
+}
+@keyframes splashShadeOut {
+  to { opacity: 0; }
+}
+@keyframes splashRipple {
+  from { opacity: 0.5; transform: scale(0.9); }
+  to   { opacity: 0;   transform: scale(1.7); }
+}
+@keyframes splashLogoReveal {
+  from { opacity: 0; transform: scale(0.4) translateY(14%); }
+  to   { opacity: 1; transform: scale(1)   translateY(0);   }
+}
+@keyframes splashLetter {
+  from { opacity: 0; transform: translateY(18px) scale(1.3); filter: blur(5px); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   filter: blur(0);   }
+}
+
 .splash {
   position: fixed;
   inset: 0;
@@ -1424,6 +1498,7 @@ a { text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   background:
     radial-gradient(900px 600px at 50% -20%,  var(--accent-glow) 0%, transparent 62%),
     radial-gradient(700px 500px at 100% 115%, var(--accent-dim)  0%, transparent 60%),
@@ -1431,11 +1506,76 @@ a { text-decoration: none; }
   animation: fadeIn 0.3s ease both;
 }
 .splash-exit {
-  animation: splashOut 0.48s ease forwards;
+  animation: splashOut 0.55s ease forwards;
   pointer-events: none;
 }
 .splash-exit .splash-body {
-  animation: splashBodyOut 0.48s ease forwards;
+  animation: splashBodyOut 0.55s ease forwards;
+}
+
+/* Ambient backdrop — drifting glow blobs, a slow diagonal
+   grid pan (masked to a centre vignette) and rising motes */
+.splash-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.splash-bg-glow {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+}
+.splash-bg-glow-a {
+  top: -22vmax;
+  left: -14vmax;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 62%);
+  animation: splashDriftA 11s ease-in-out infinite alternate;
+}
+.splash-bg-glow-b {
+  bottom: -24vmax;
+  right: -16vmax;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+  opacity: 0.7;
+  animation: splashDriftB 14s ease-in-out infinite alternate;
+}
+.splash-bg-gridwrap {
+  position: absolute;
+  inset: 0;
+  -webkit-mask: radial-gradient(75% 70% at 50% 44%, #000 30%, transparent 78%);
+          mask: radial-gradient(75% 70% at 50% 44%, #000 30%, transparent 78%);
+}
+.splash-bg-grid {
+  position: absolute;
+  top: -60px;
+  left: -60px;
+  width: calc(100% + 120px);
+  height: calc(100% + 120px);
+  background-image:
+    linear-gradient(var(--border-accent) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-accent) 1px, transparent 1px);
+  background-size: 46px 46px;
+  opacity: 0.35;
+  animation: splashGridPan 4.5s linear infinite;
+}
+.splash-bg-particle {
+  position: absolute;
+  bottom: -10px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  animation: splashRise linear infinite;  /* delay & duration set inline */
+}
+
+/* Light burst at the reveal moment */
+.splash-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 44%, var(--accent-glow-lg) 0%, transparent 52%);
+  opacity: 0;
+  pointer-events: none;
+  animation: splashFlash 0.75s ease-out 1.9s both;
 }
 
 .splash-body {
@@ -1445,56 +1585,226 @@ a { text-decoration: none; }
   gap: 0;
 }
 
-/* Logo mark — mirrors .welcome-logo, plus a slow orbit arc */
-.splash-logo {
+/* Vault — frame + lit chamber beneath, door on top. The door
+   carries the rim rivets, tick dial, locking bolts and the
+   combination wheel, then swings open on its left hinge
+   (backface hidden past edge-on). */
+.splash-vault {
   position: relative;
-  width: clamp(84px, 18vw, 104px);
+  width: clamp(150px, 32vw, 190px);
   aspect-ratio: 1;
-  animation: scaleIn 0.55s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+  animation: splashVaultIn 0.55s cubic-bezier(0.34, 1.2, 0.64, 1) both;
 }
-.splash-logo-glow {
+
+.splash-vault-glow {
   position: absolute;
-  inset: -22px;
+  inset: -30%;
+  z-index: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--accent-glow) 0%, var(--accent-dim) 45%, transparent 70%);
-  animation: splashBreathe 2.6s ease-in-out 0.5s infinite;
+  background: radial-gradient(circle, var(--accent-glow-lg) 0%, var(--accent-dim) 48%, transparent 72%);
+  opacity: 0;
   pointer-events: none;
+  animation:
+    splashGlowIn 0.8s ease 1.92s both,
+    splashBreathe 2.8s ease-in-out 2.72s infinite;
 }
-.splash-orbit {
+
+.splash-vault-frame {
   position: absolute;
-  inset: -14px;
+  inset: -5.5%;
+  z-index: 1;
   border-radius: 50%;
-  border: 2px solid transparent;
-  border-top-color: var(--accent);
-  border-right-color: var(--border-accent);
-  opacity: 0.7;
-  animation: splashOrbit 1.8s linear infinite;
+  border: 1px solid var(--border-strong);
+  background: conic-gradient(from 210deg,
+    var(--bg-elevated) 0deg,
+    var(--bg-hover)    55deg,
+    var(--bg-elevated) 120deg,
+    var(--bg-subtle)   185deg,
+    var(--bg-elevated) 250deg,
+    var(--bg-hover)    305deg,
+    var(--bg-elevated) 360deg);
+  box-shadow: var(--shadow-lg);
 }
-.splash-logo-ring {
+
+.splash-vault-chamber {
   position: absolute;
-  inset: 0;
-  border-radius: var(--radius-2xl);
-  border: 1px solid var(--border-accent);
-  background: var(--bg-surface);
-  box-shadow: 0 0 0 5px var(--accent-dim), var(--shadow-sm);
-}
-.splash-logo-core {
-  position: absolute;
-  inset: 12px;
-  border-radius: var(--radius-xl);
-  background: var(--gradient-brand);
+  inset: 1%;
+  z-index: 2;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 34%, var(--bg-card), var(--bg-subtle) 78%);
+  box-shadow: inset 0 3px 18px rgba(16, 24, 40, 0.18), inset 0 0 0 1px var(--border-mid);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFFFFF;
-  box-shadow: 0 4px 14px rgba(8, 145, 178, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.20);
-  animation: float 3.4s ease-in-out 0.6s infinite;
+}
+.splash-vault-chamber::after {  /* pre-open shade, lifts with the door */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(4, 12, 20, 0.32);
+  animation: splashShadeOut 0.6s ease 1.95s forwards;
 }
 
-/* Wordmark — staggered letter rise (delays set inline) */
+.splash-vault-logo {
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(8, 145, 178, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  opacity: 0;
+  animation:
+    splashLogoReveal 0.55s cubic-bezier(0.34, 1.3, 0.64, 1) 2.02s both,
+    float 3.4s ease-in-out 2.85s infinite;
+}
+
+/* Unlock shockwaves */
+.splash-vault-ripple {
+  position: absolute;
+  inset: -2%;
+  z-index: 4;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  animation: splashRipple 0.9s cubic-bezier(0.2, 0.6, 0.35, 1) 1.58s forwards;
+}
+.splash-vault-ripple-late {
+  border-color: var(--accent-soft);
+  animation-delay: 1.95s;
+}
+
+.splash-vault-door {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.16), transparent 48%),
+    conic-gradient(from 210deg,
+      var(--bg-elevated) 0deg,
+      var(--bg-hover)    55deg,
+      var(--bg-elevated) 120deg,
+      var(--bg-subtle)   185deg,
+      var(--bg-elevated) 250deg,
+      var(--bg-hover)    305deg,
+      var(--bg-elevated) 360deg);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transform-origin: left center;
+  backface-visibility: hidden;
+  will-change: transform;
+  animation:
+    splashClunk 0.3s ease 1.5s,
+    splashDoorOpen 0.75s cubic-bezier(0.6, 0.04, 0.28, 1) 1.86s forwards;
+}
+.splash-vault-door::after {  /* top-left sheen */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 42%);
+  pointer-events: none;
+}
+
+.splash-vault-rim {  /* groove ring + eight rivets */
+  position: absolute;
+  inset: 2.5%;
+  border-radius: 50%;
+  border: 1px solid var(--border-mid);
+  background:
+    radial-gradient(circle at 96%   50%,   var(--border-strong) 0 2.4px, transparent 3.2px),
+    radial-gradient(circle at 82.5% 82.5%, var(--border-strong) 0 2.4px, transparent 3.2px),
+    radial-gradient(circle at 50%   96%,   var(--border-strong) 0 2.4px, transparent 3.2px),
+    radial-gradient(circle at 17.5% 82.5%, var(--border-strong) 0 2.4px, transparent 3.2px),
+    radial-gradient(circle at 4%    50%,   var(--border-strong) 0 2.4px, transparent 3.2px),
+    radial-gradient(circle at 17.5% 17.5%, var(--border-strong) 0 2.4px, transparent 3.2px),
+    radial-gradient(circle at 50%   4%,    var(--border-strong) 0 2.4px, transparent 3.2px),
+    radial-gradient(circle at 82.5% 17.5%, var(--border-strong) 0 2.4px, transparent 3.2px);
+}
+
+.splash-vault-dial {  /* tick ring, drifts slowly */
+  position: absolute;
+  inset: 9%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    var(--border-strong) 0deg 1.4deg,
+    transparent 1.4deg 12deg
+  );
+  -webkit-mask: radial-gradient(closest-side, transparent 84%, #000 85% 97%, transparent 98%);
+          mask: radial-gradient(closest-side, transparent 84%, #000 85% 97%, transparent 98%);
+  opacity: 0.75;
+  animation: splashOrbit 30s linear infinite;
+}
+
+.splash-vault-bolt {  /* positioned by --bolt-angle (set inline) */
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--bolt-angle));
+  pointer-events: none;
+}
+.splash-vault-bolt::before {  /* the pin — retracts inward on unlock */
+  content: '';
+  position: absolute;
+  top: -3.5%;
+  left: 50%;
+  width: 7%;
+  height: 8.5%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(180deg, var(--border-strong), var(--bg-hover));
+  box-shadow: var(--shadow-sm);
+  transform: translateX(-50%);
+  animation: splashBoltRetract 0.26s ease-in calc(1.55s + var(--bolt-i) * 0.03s) forwards;
+}
+
+.splash-vault-wheel {
+  position: absolute;
+  inset: 25%;
+  border-radius: 50%;
+  will-change: transform;
+  animation: splashWheel 1.25s 0.35s both;
+}
+.splash-vault-wheel::before {  /* grip ring */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 4px solid var(--border-strong);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.28), 0 2px 6px rgba(16, 24, 40, 0.18);
+}
+.splash-vault-spoke {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9%;
+  height: 92%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(180deg, var(--border-strong), var(--bg-hover) 50%, var(--border-strong));
+  transform: translate(-50%, -50%) rotate(var(--spoke-a));
+}
+.splash-vault-spoke:nth-child(1) { --spoke-a: 0deg;   }
+.splash-vault-spoke:nth-child(2) { --spoke-a: 60deg;  }
+.splash-vault-spoke:nth-child(3) { --spoke-a: 120deg; }
+.splash-vault-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 38%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  transform: translate(-50%, -50%);
+}
+
+/* Wordmark — letters stamp in after the reveal (delays set inline) */
 .splash-wordmark {
   display: flex;
-  margin-top: 26px;
+  margin-top: 30px;
   font-family: var(--font-display);
   font-size: clamp(34px, 8vw, 46px);
   font-weight: 700;
@@ -1505,7 +1815,7 @@ a { text-decoration: none; }
 .splash-wordmark span {
   display: inline-block;
   opacity: 0;
-  animation: fadeInUp 0.5s ease both;
+  animation: splashLetter 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 }
 
 .splash-tagline {
@@ -1517,7 +1827,7 @@ a { text-decoration: none; }
   text-transform: uppercase;
   letter-spacing: 0.22em;
   opacity: 0;
-  animation: fadeIn 0.6s ease 0.8s both;
+  animation: fadeIn 0.6s ease 2.38s both;
 }
 
 /* Indeterminate progress sweep */
@@ -1529,14 +1839,14 @@ a { text-decoration: none; }
   background: var(--border-subtle);
   overflow: hidden;
   opacity: 0;
-  animation: fadeIn 0.5s ease 0.95s both;
+  animation: fadeIn 0.5s ease 2.5s both;
 }
 .splash-progress-fill {
   width: 34%;
   height: 100%;
   border-radius: var(--radius-full);
   background: var(--gradient-brand-h);
-  animation: splashSweep 1.15s ease-in-out 1s infinite;
+  animation: splashSweep 1.15s ease-in-out 2.55s infinite;
 }
 
 /* ────────────────────────────────────────────
