@@ -1,10 +1,9 @@
 from __future__ import annotations
-
 import json
 import logging
 from typing import Any, AsyncIterator, Dict, List, Optional, Protocol, Sequence, runtime_checkable
 
-from app.clients.openai_client import ChatResult, LLMError, Message
+from app.clients.gemini_client import ChatResult, LLMError, Message
 
 logger = logging.getLogger("ai_secretary.llm")
 
