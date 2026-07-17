@@ -7,12 +7,12 @@ import sys
 from pathlib import Path
 from typing import List
 
-from app.clients.openai_client import OpenAIClient
+from app.clients.gemini_client import GeminiClient
 from app.core.config import get_settings
 from app.services.llm_service import LLMService
 from app.services.rag.documents import Document, load_path
 from app.services.rag.pipeline import RagError, RagPipeline
-from app.services.rag.vector_store import OpenAIEmbedder, build_vector_store
+from app.services.rag.vector_store import GeminiEmbedder, build_vector_store
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("ai_secretary.ingest")
@@ -31,8 +31,8 @@ def _collect(paths: List[str]) -> List[Document]:
 
 async def _run(paths: List[str]) -> int:
     settings = get_settings()
-    if not settings.openai_api_key:
-        logger.error("OPENAI_API_KEY is not set; cannot embed documents.")
+    if not settings.gemini_api_key:
+        logger.error("GEMINI_API_KEY is not set; cannot embed documents.")
         return 2
 
     docs = _collect(paths)
@@ -40,11 +40,11 @@ async def _run(paths: List[str]) -> int:
         logger.error("No supported documents found.")
         return 1
 
-    client = OpenAIClient(settings)
+    client = GeminiClient(settings)
     try:
         pipeline = RagPipeline(
             settings=settings,
-            embedder=OpenAIEmbedder(client),
+            embedder=GeminiEmbedder(client),
             store=build_vector_store(settings),
             llm=LLMService(client),
         )
