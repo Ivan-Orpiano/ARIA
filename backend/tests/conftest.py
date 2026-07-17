@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 import pytest
 
-from app.clients.openai_client import ChatResult
+from app.clients.gemini_client import ChatResult
 from app.core.config import Settings, get_settings
 
 _WORD_RE = re.compile(r"[a-z0-9]+")
@@ -83,7 +83,7 @@ def settings() -> Settings:
     """Settings isolated from .env and the real environment."""
     return Settings(
         _env_file=None,
-        openai_api_key="test-key",
+        gemini_api_key="test-key",
         vector_store="memory",
         chunk_size_tokens=64,
         chunk_overlap_tokens=8,
@@ -93,7 +93,7 @@ def settings() -> Settings:
 @pytest.fixture
 def clean_settings_cache(monkeypatch):
     """Boot the app against a controlled environment (no API key, memory store)."""
-    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("VECTOR_STORE", "memory")
     get_settings.cache_clear()
     yield
