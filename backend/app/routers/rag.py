@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import logging 
+import dataclasses
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
-from app.clients.openai_client import LLMError
+from app.clients.gemini_client import LLMError
 from app.model.rag_schemas import (
     IngestRequest,
     IngestResponse,
@@ -24,11 +25,11 @@ router = APIRouter(prefix="/api/rag", tags=["RAG"])
 
 
 def _pipeline(request: Request) -> RagPipeline:
-    pipeline: Optional[RagPipeLine] = getattr(request.app.state, "rag_pipeline", None   )
+    pipeline: Optional[RagPipeline] = getattr(request.app.state, "rag_pipeline", None)
     if pipeline is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="RAG pipeline not available (OPENAI_API_KEY not set).",
+            detail="RAG pipeline not available (GEMINI_API_KEY not set).",
         )
     return pipeline
 
@@ -62,7 +63,7 @@ async def query(body: QueryRequest, request: Request) -> QueryResponse:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
     return QueryResponse(
         answer=result.answer,
-        sources=[SourceModel(**vars(s)) for s in result.sources],
+        sources=[SourceModel(**dataclasses.asdict(s)) for s in result.sources],
         used_context=result.used_context,
         model=result.model,
         usage=result.usage,

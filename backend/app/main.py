@@ -6,13 +6,15 @@ import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.clients.openai_client import OpenAIClient
+from app.clients.gemini_client import GeminiClient
 from app.core.config import get_settings
-from app.routers import email, rag
+from app.routers import chat, email, rag
+from app.services.briefing_service import BriefingService
+from app.services.chat_service import ChatService
 from app.services.llm_service import LLMService
 from app.services.n8n_client import N8nClient
 from app.services.rag.pipeline import RagPipeline
-from app.services.rag.vector_store import OpenAIEmbedder, build_vector_store
+from app.services.rag.vector_store import GeminiEmbedder, build_vector_store
 
 logger = logging.getLogger("ai_secretary")
 
@@ -28,28 +30,38 @@ async def lifespan(app: FastAPI):
         app.state.n8n_client = N8nClient(settings, http_client)
 
         # RAG pipeline is optional: only built when an API key is present.
-        openai_client: Optional[OpenAIClient] = None
+        gemini_client: Optional[GeminiClient] = None
+        llm: Optional[LLMService] = None
         app.state.rag_pipeline = None
-        if settings.openai_api_key:
-            openai_client = OpenAIClient(settings)
-            llm = LLMService(openai_client)
-            embedder = OpenAIEmbedder(openai_client)
+        if settings.gemini_api_key:
+            gemini_client = GeminiClient(settings)
+            llm = LLMService(gemini_client)
+            embedder = GeminiEmbedder(gemini_client)
             store = build_vector_store(settings)
-            app.state.openai_client = openai_client
+            app.state.gemini_client = gemini_client
             app.state.llm_service = llm
             app.state.rag_pipeline = RagPipeline(
                 settings=settings, embedder=embedder, store=store, llm=llm
             )
             logger.info("RAG pipeline ready (chat=%s, embed=%s).",
-                        settings.openai_chat_model, settings.openai_embedding_model)
+                        settings.gemini_chat_model, settings.gemini_embedding_model)
         else:
-            logger.warning("OPENAI_API_KEY not set; RAG endpoints disabled.")
+            logger.warning("GEMINI_API_KEY not set; RAG endpoints disabled.")
+
+        # Chat is always available; it degrades gracefully when llm/pipeline
+        # are missing instead of taking the endpoint down.
+        app.state.chat_service = ChatService(
+            settings=settings,
+            llm=llm,
+            pipeline=app.state.rag_pipeline,
+            briefing=BriefingService(settings, http_client),
+        )
 
         try:
             yield
         finally:
-            if openai_client is not None:
-                await openai_client.aclose()
+            if gemini_client is not None:
+                await gemini_client.aclose()
 
 
 def create_app() -> FastAPI:
@@ -64,6 +76,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(chat.router)
     app.include_router(email.router)
     app.include_router(rag.router)
 
@@ -72,7 +85,7 @@ def create_app() -> FastAPI:
         return {
             "status": "ok",
             "env": settings.app_env,
-            "rag_enabled": bool(settings.openai_api_key),
+            "rag_enabled": bool(settings.gemini_api_key),
         }
 
     return app

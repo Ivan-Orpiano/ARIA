@@ -1,4 +1,4 @@
-"""Minimal end-to-end eval / smoke test against a live OpenAI key.
+"""Minimal end-to-end eval / smoke test against a live Gemini key.
 
 Ingests a tiny synthetic corpus, then checks (1) the LLM call works, (2) retrieval
 returns the relevant chunk (retrieval recall), and (3) the answer is grounded and
@@ -6,7 +6,7 @@ cites a source. Run manually:
 
     python -m scripts.eval_rag
 
-Requires OPENAI_API_KEY. Exits non-zero if any check fails.
+Requires GEMINI_API_KEY. Exits non-zero if any check fails.
 """
 
 from __future__ import annotations
@@ -15,12 +15,12 @@ import asyncio
 import logging
 import sys
 
-from app.clients.openai_client import OpenAIClient
+from app.clients.gemini_client import GeminiClient
 from app.core.config import get_settings
 from app.services.llm_service import LLMService
 from app.services.rag.documents import load_text
 from app.services.rag.pipeline import RagPipeline
-from app.services.rag.vector_store import OpenAIEmbedder, InMemoryVectorStore
+from app.services.rag.vector_store import GeminiEmbedder, InMemoryVectorStore
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger("ai_secretary.eval")
@@ -39,14 +39,14 @@ CASES = [
 
 async def _run() -> int:
     settings = get_settings()
-    if not settings.openai_api_key:
-        logger.error("OPENAI_API_KEY not set; cannot run live eval.")
+    if not settings.gemini_api_key:
+        logger.error("GEMINI_API_KEY not set; cannot run live eval.")
         return 2
 
-    client = OpenAIClient(settings)
+    client = GeminiClient(settings)
     pipeline = RagPipeline(
         settings=settings,
-        embedder=OpenAIEmbedder(client),
+        embedder=GeminiEmbedder(client),
         store=InMemoryVectorStore(),  # ephemeral, isolated from any persisted DB
         llm=LLMService(client),
     )
