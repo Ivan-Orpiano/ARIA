@@ -80,7 +80,7 @@ async def test_falls_back_to_ungrounded_when_retrieval_fails(settings):
             raise AssertionError("not used")
 
         async def embed_query(self, text):
-            from app.clients.openai_client import LLMError
+            from app.clients.gemini_client import LLMError
 
             raise LLMError("embedding down")
 
