@@ -1,10 +1,3 @@
-"""ARIA's chat flow: retrieval-augmented when possible, graceful otherwise.
-
-Degradation ladder:
-1. LLM + knowledge base hits  -> grounded reply with cited sources.
-2. LLM, no hits / no pipeline -> plain conversational reply.
-3. No LLM configured          -> canned assistant reply (the app stays usable).
-"""
 from __future__ import annotations
 
 import logging
